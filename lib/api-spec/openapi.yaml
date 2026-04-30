@@ -343,6 +343,10 @@ components:
         error:
           type: string
           nullable: true
+        isError:
+          type: boolean
+          nullable: true
+          description: True when the bot's reply is a validation rejection or correction.
 
     AvailabilityResult:
       type: object

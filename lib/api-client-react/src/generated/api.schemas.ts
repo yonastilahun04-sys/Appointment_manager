@@ -112,6 +112,11 @@ export interface ChatbotResponse {
   appointment?: Appointment | null;
   /** @nullable */
   error?: string | null;
+  /**
+   * True when the bot's reply is a validation rejection or correction.
+   * @nullable
+   */
+  isError?: boolean | null;
 }
 
 export interface AvailabilityResult {

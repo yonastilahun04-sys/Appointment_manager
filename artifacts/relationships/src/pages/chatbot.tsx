@@ -47,6 +47,7 @@ type Message = {
   id: string;
   from: "bot" | "user";
   text: string;
+  isError?: boolean;
 };
 
 type BotState = {
@@ -100,10 +101,16 @@ export default function ChatbotPage() {
             options: string[];
             inputType?: "text" | "datetime" | "choice" | "none";
             appointment?: unknown;
+            isError?: boolean | null;
           };
           setMessages((prev) => [
             ...prev,
-            { id: uid(), from: "bot", text: r.reply },
+            {
+              id: uid(),
+              from: "bot",
+              text: r.reply,
+              isError: r.isError ?? false,
+            },
           ]);
           setState(r.state);
           setOptions(r.options ?? []);
@@ -119,6 +126,7 @@ export default function ChatbotPage() {
               id: uid(),
               from: "bot",
               text: "Sorry, something went wrong. Please try again.",
+              isError: true,
             },
           ]);
         },
@@ -207,7 +215,12 @@ export default function ChatbotPage() {
             data-testid="chat-scroll"
           >
             {messages.map((m) => (
-              <MessageBubble key={m.id} from={m.from} text={m.text} />
+              <MessageBubble
+                key={m.id}
+                from={m.from}
+                text={m.text}
+                isError={m.isError}
+              />
             ))}
             {chatbot.isPending && (
               <div className="flex">
@@ -326,17 +339,26 @@ export default function ChatbotPage() {
   );
 }
 
-function MessageBubble({ from, text }: { from: "bot" | "user"; text: string }) {
+function MessageBubble({
+  from,
+  text,
+  isError,
+}: {
+  from: "bot" | "user";
+  text: string;
+  isError?: boolean;
+}) {
   const isBot = from === "bot";
+  const botStyle = isError
+    ? "bg-red-50 text-red-700 border border-red-200 rounded-bl-sm dark:bg-red-950/40 dark:text-red-300 dark:border-red-900"
+    : "bg-muted text-foreground rounded-bl-sm";
   return (
     <div className={`flex ${isBot ? "justify-start" : "justify-end"}`}>
       <div
         className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm leading-relaxed ${
-          isBot
-            ? "bg-muted text-foreground rounded-bl-sm"
-            : "bg-indigo-600 text-white rounded-br-sm"
+          isBot ? botStyle : "bg-indigo-600 text-white rounded-br-sm"
         }`}
-        data-testid={`bubble-${from}`}
+        data-testid={`bubble-${from}${isError ? "-error" : ""}`}
       >
         {text}
       </div>

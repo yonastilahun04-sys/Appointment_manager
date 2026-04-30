@@ -75,6 +75,7 @@ export async function handleChatbotTurn(
           "I didn't catch that. What is your full name?",
           "ask_name",
           "text",
+          true,
         );
       }
       const next: ChatbotState = {
@@ -96,6 +97,7 @@ export async function handleChatbotTurn(
           "Please share your address so we can keep it on file.",
           "ask_address",
           "text",
+          true,
         );
       }
       const next: ChatbotState = {
@@ -117,6 +119,7 @@ export async function handleChatbotTurn(
           "That phone number doesn't look right. Please include the country code if you have one — for example +251 911 223344, +1 555 123 4567, or 0911223344.",
           "ask_phone",
           "text",
+          true,
         );
       }
       const next: ChatbotState = {
@@ -138,6 +141,7 @@ export async function handleChatbotTurn(
           "A short description of the reason helps us prepare. What is the reason for your visit?",
           "ask_reason",
           "text",
+          true,
         );
       }
       const next: ChatbotState = {
@@ -159,6 +163,7 @@ export async function handleChatbotTurn(
           state,
           options: STAFF_OPTIONS,
           inputType: "choice",
+          isError: true,
         };
       }
       const next: ChatbotState = {
@@ -181,6 +186,7 @@ export async function handleChatbotTurn(
           "I couldn't read that time. Please pick a valid date and time.",
           "ask_datetime",
           "datetime",
+          true,
         );
       }
       if (date.getTime() < Date.now()) {
@@ -189,6 +195,7 @@ export async function handleChatbotTurn(
           "That time is in the past. Please choose a future date and time.",
           "ask_datetime",
           "datetime",
+          true,
         );
       }
       const staff = state.data.requestedStaff!;
@@ -207,6 +214,7 @@ export async function handleChatbotTurn(
           `I'm sorry, ${staff} is already booked at ${formatAppointmentTime(date)}. Please pick another time.`,
           "ask_datetime",
           "datetime",
+          true,
         );
       }
 
@@ -243,6 +251,7 @@ export async function handleChatbotTurn(
           "Sorry, something went wrong saving your appointment. Please try a different time.",
           "ask_datetime",
           "datetime",
+          true,
         );
       }
     }
@@ -268,12 +277,14 @@ function reply(
   text: string,
   step: ChatbotState["step"],
   inputType: "text" | "datetime" | "choice" | "none",
+  isError = false,
 ): ChatbotResponse {
   return {
     reply: text,
     state: { ...state, step },
     options: [],
     inputType,
+    isError,
   };
 }
 

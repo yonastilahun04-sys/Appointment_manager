@@ -34,4 +34,5 @@ export type ChatbotResponse = {
     typeof import("./chatbot").serializeAppointment
   > | null;
   error?: string | null;
+  isError?: boolean | null;
 };

@@ -96,6 +96,12 @@ export const ChatbotMessageResponse = zod.object({
       "The created appointment, present only after successful booking.",
     ),
   error: zod.string().nullish(),
+  isError: zod
+    .boolean()
+    .nullish()
+    .describe(
+      "True when the bot's reply is a validation rejection or correction.",
+    ),
 });
 
 /**
