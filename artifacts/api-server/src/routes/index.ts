@@ -1,18 +1,16 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
-import workspaceRouter from "./workspace";
-import stagesRouter from "./stages";
-import contactsRouter from "./contacts";
-import interactionsRouter from "./interactions";
-import statsRouter from "./stats";
+import chatbotRouter from "./chatbot";
+import appointmentsRouter from "./appointments";
+import authRouter from "./auth";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(workspaceRouter);
-router.use(stagesRouter);
-router.use(contactsRouter);
-router.use(interactionsRouter);
-router.use(statsRouter);
+router.use(chatbotRouter);
+router.use(appointmentsRouter);
+router.use(authRouter);
+router.use(adminRouter);
 
 export default router;

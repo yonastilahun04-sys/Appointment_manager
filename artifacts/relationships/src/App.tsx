@@ -1,56 +1,29 @@
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { setBaseUrl } from "@workspace/api-client-react";
+import ChatbotPage from "@/pages/chatbot";
+import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import Pipeline from "@/pages/pipeline";
-import Contacts from "@/pages/contacts";
-import ContactDetail from "@/pages/contact-detail";
-import Settings from "@/pages/settings";
-import Onboarding from "@/pages/onboarding";
-import { Layout } from "@/components/layout";
-import { useGetWorkspace } from "@workspace/api-client-react";
-import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+setBaseUrl(null);
 
-function GuardedRoute({ component: Component }: { component: React.ComponentType<any> }) {
-  const { data: workspace, isLoading } = useGetWorkspace();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!isLoading && workspace && !workspace.initialized) {
-      setLocation("/onboarding");
-    }
-  }, [isLoading, workspace, setLocation]);
-
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
-  }
-
-  if (workspace && !workspace.initialized) {
-    return null; // Will redirect via useEffect
-  }
-
-  return (
-    <Layout>
-      <Component />
-    </Layout>
-  );
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5_000,
+      retry: 1,
+    },
+  },
+});
 
 function Router() {
   return (
     <Switch>
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/" component={() => <GuardedRoute component={Dashboard} />} />
-      <Route path="/pipeline" component={() => <GuardedRoute component={Pipeline} />} />
-      <Route path="/contacts" component={() => <GuardedRoute component={Contacts} />} />
-      <Route path="/contacts/:id" component={() => <GuardedRoute component={ContactDetail} />} />
-      <Route path="/settings" component={() => <GuardedRoute component={Settings} />} />
-      <Route component={() => <GuardedRoute component={NotFound} />} />
+      <Route path="/" component={ChatbotPage} />
+      <Route path="/admin" component={AdminPage} />
+      <Route component={NotFound} />
     </Switch>
   );
 }

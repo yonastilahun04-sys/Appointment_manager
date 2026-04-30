@@ -2,17 +2,17 @@ openapi: 3.0.3
 info:
   title: Api
   version: 0.1.0
-  description: Relationship Tracker API
+  description: AI-Powered Appointment Management System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-  - name: workspace
-  - name: stages
-  - name: contacts
-  - name: interactions
-  - name: stats
+  - name: chatbot
+  - name: appointments
+  - name: auth
+  - name: admin
+
 paths:
   /healthz:
     get:
@@ -27,345 +27,206 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  /workspace:
-    get:
-      operationId: getWorkspace
-      tags: [workspace]
-      summary: Get the single workspace configuration (relationship type + pipeline defaults)
+  /chatbot/message:
+    post:
+      operationId: chatbotMessage
+      tags: [chatbot]
+      summary: Send a message to the booking chatbot. Returns next prompt or final confirmation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatbotRequest"
       responses:
         "200":
-          description: Workspace
+          description: Bot response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Workspace"
+                $ref: "#/components/schemas/ChatbotResponse"
+
+  /appointments/check-availability:
+    get:
+      operationId: checkAvailability
+      tags: [appointments]
+      summary: Check whether a specific staff member is free at a given time
+      parameters:
+        - in: query
+          name: requestedStaff
+          required: true
+          schema: { type: string }
+        - in: query
+          name: appointmentDate
+          required: true
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Availability result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityResult"
+
+  /auth/login:
+    post:
+      operationId: adminLogin
+      tags: [auth]
+      summary: Manager login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getCurrentAdmin
+      tags: [auth]
+      summary: Get the currently logged in manager (or null)
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+
+  /auth/logout:
+    post:
+      operationId: adminLogout
+      tags: [auth]
+      summary: Log out the current manager
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /admin/appointments:
+    get:
+      operationId: listAdminAppointments
+      tags: [admin]
+      summary: List all appointments with optional filters
+      parameters:
+        - in: query
+          name: staff
+          required: false
+          schema: { type: string }
+        - in: query
+          name: date
+          required: false
+          schema: { type: string, format: date }
+          description: ISO date (YYYY-MM-DD) to filter to a single day
+        - in: query
+          name: status
+          required: false
+          schema:
+            $ref: "#/components/schemas/AppointmentStatus"
+      responses:
+        "200":
+          description: Appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/appointments/{id}/status:
     put:
-      operationId: updateWorkspace
-      tags: [workspace]
-      summary: Update workspace configuration
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WorkspaceUpdate"
-      responses:
-        "200":
-          description: Updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Workspace"
-
-  /workspace/initialize:
-    post:
-      operationId: initializeWorkspace
-      tags: [workspace]
-      summary: Complete first-run setup (choose relationship type + stage names)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WorkspaceInit"
-      responses:
-        "200":
-          description: Initialized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Workspace"
-
-  /stages:
-    get:
-      operationId: listStages
-      tags: [stages]
-      summary: List pipeline stages in order
-      responses:
-        "200":
-          description: Stages
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Stage"
-    post:
-      operationId: createStage
-      tags: [stages]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/NewStage"
-      responses:
-        "200":
-          description: Stage
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Stage"
-
-  /stages/reorder:
-    post:
-      operationId: reorderStages
-      tags: [stages]
-      summary: Set the full order of stages
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/StageReorder"
-      responses:
-        "200":
-          description: Reordered
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Stage"
-
-  /stages/{id}:
-    patch:
-      operationId: updateStage
-      tags: [stages]
+      operationId: updateAppointmentStatus
+      tags: [admin]
+      summary: Update an appointment's status (confirm, complete, cancel)
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StageUpdate"
+              $ref: "#/components/schemas/StatusUpdateRequest"
       responses:
         "200":
-          description: Stage
+          description: Updated appointment
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Stage"
+                $ref: "#/components/schemas/Appointment"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/appointments/{id}:
     delete:
-      operationId: deleteStage
-      tags: [stages]
+      operationId: deleteAppointment
+      tags: [admin]
+      summary: Delete an appointment
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
-        "204":
+        "200":
           description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /contacts:
+  /admin/stats:
     get:
-      operationId: listContacts
-      tags: [contacts]
-      parameters:
-        - name: search
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: stageId
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Summary stats for the dashboard
       responses:
         "200":
-          description: Contacts
+          description: Stats
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Contact"
-    post:
-      operationId: createContact
-      tags: [contacts]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/NewContact"
-      responses:
-        "200":
-          description: Created
+                $ref: "#/components/schemas/AdminStats"
+        "401":
+          description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Contact"
-
-  /contacts/{id}:
-    get:
-      operationId: getContact
-      tags: [contacts]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Contact
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Contact"
-    patch:
-      operationId: updateContact
-      tags: [contacts]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ContactUpdate"
-      responses:
-        "200":
-          description: Contact
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Contact"
-    delete:
-      operationId: deleteContact
-      tags: [contacts]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Deleted
-
-  /contacts/{id}/interactions:
-    get:
-      operationId: listInteractions
-      tags: [interactions]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Interactions
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Interaction"
-    post:
-      operationId: createInteraction
-      tags: [interactions]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/NewInteraction"
-      responses:
-        "200":
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Interaction"
-
-  /interactions/{id}:
-    delete:
-      operationId: deleteInteraction
-      tags: [interactions]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Deleted
-
-  /tags:
-    get:
-      operationId: listTags
-      tags: [stats]
-      summary: All unique tags with usage counts
-      responses:
-        "200":
-          description: Tags
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TagCount"
-
-  /stats/summary:
-    get:
-      operationId: getSummary
-      tags: [stats]
-      summary: Top-level counts and recent activity
-      responses:
-        "200":
-          description: Summary
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Summary"
-
-  /activity/recent:
-    get:
-      operationId: recentActivity
-      tags: [stats]
-      summary: Latest interactions across all contacts
-      parameters:
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Activity
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ActivityItem"
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   schemas:
@@ -375,264 +236,165 @@ components:
       properties:
         status:
           type: string
+          enum: [ok]
 
-    Workspace:
+    OkResponse:
       type: object
-      required: [id, initialized, relationshipType, entityLabel, entityLabelPlural, affiliationLabel, createdAt]
+      required: [ok]
       properties:
-        id:
-          type: string
-        initialized:
+        ok:
           type: boolean
-        relationshipType:
-          type: string
-          description: One of 'sales', 'clients', 'investors', 'candidates', 'personal', 'custom'
-        entityLabel:
-          type: string
-          description: Singular label for a contact (e.g. 'Lead', 'Client')
-        entityLabelPlural:
-          type: string
-        affiliationLabel:
-          type: string
-          description: Label used for company/affiliation field
-        createdAt:
-          type: string
-          format: date-time
 
-    WorkspaceUpdate:
+    ErrorResponse:
       type: object
+      required: [error]
       properties:
-        relationshipType:
-          type: string
-        entityLabel:
-          type: string
-        entityLabelPlural:
-          type: string
-        affiliationLabel:
+        error:
           type: string
 
-    WorkspaceInit:
+    AppointmentStatus:
+      type: string
+      enum: [pending, confirmed, completed, cancelled]
+
+    Appointment:
       type: object
-      required: [relationshipType, entityLabel, entityLabelPlural, affiliationLabel, stageNames]
+      required:
+        - id
+        - fullName
+        - address
+        - phoneNumber
+        - reason
+        - requestedStaff
+        - appointmentDate
+        - status
+        - createdAt
+        - updatedAt
       properties:
-        relationshipType:
+        id: { type: string }
+        fullName: { type: string }
+        address: { type: string }
+        phoneNumber: { type: string }
+        reason: { type: string }
+        requestedStaff: { type: string }
+        appointmentDate: { type: string, format: date-time }
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ChatbotState:
+      type: object
+      description: Conversation state passed back to the server on each turn.
+      required: [step, data]
+      properties:
+        step:
           type: string
-        entityLabel:
+          enum:
+            - greeting
+            - ask_name
+            - ask_address
+            - ask_phone
+            - ask_reason
+            - ask_staff
+            - ask_datetime
+            - confirm
+            - done
+        data:
+          type: object
+          properties:
+            fullName: { type: string, nullable: true }
+            address: { type: string, nullable: true }
+            phoneNumber: { type: string, nullable: true }
+            reason: { type: string, nullable: true }
+            requestedStaff: { type: string, nullable: true }
+            appointmentDate: { type: string, format: date-time, nullable: true }
+
+    ChatbotRequest:
+      type: object
+      required: [state]
+      properties:
+        message:
           type: string
-        entityLabelPlural:
+          description: The user's text input. Omit/empty to start a new conversation.
+        state:
+          $ref: "#/components/schemas/ChatbotState"
+
+    ChatbotResponse:
+      type: object
+      required: [reply, state, options]
+      properties:
+        reply:
           type: string
-        affiliationLabel:
-          type: string
-        stageNames:
+          description: Bot's message back to the user.
+        state:
+          $ref: "#/components/schemas/ChatbotState"
+        options:
           type: array
-          items:
-            type: string
-
-    Stage:
-      type: object
-      required: [id, name, position, color, createdAt]
-      properties:
-        id:
+          items: { type: string }
+          description: Suggested quick-reply options (may be empty).
+        inputType:
           type: string
-        name:
-          type: string
-        position:
-          type: integer
-        color:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-
-    NewStage:
-      type: object
-      required: [name]
-      properties:
-        name:
-          type: string
-        color:
-          type: string
-
-    StageUpdate:
-      type: object
-      properties:
-        name:
-          type: string
-        color:
-          type: string
-
-    StageReorder:
-      type: object
-      required: [ids]
-      properties:
-        ids:
-          type: array
-          items:
-            type: string
-
-    Contact:
-      type: object
-      required: [id, name, tags, createdAt, updatedAt]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        affiliation:
-          type: string
+          enum: [text, datetime, choice, none]
+        appointment:
+          allOf:
+            - $ref: "#/components/schemas/Appointment"
           nullable: true
-        email:
-          type: string
-          nullable: true
-        phone:
-          type: string
-          nullable: true
-        stageId:
-          type: string
-          nullable: true
-        tags:
-          type: array
-          items:
-            type: string
-        notes:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    NewContact:
-      type: object
-      required: [name]
-      properties:
-        name:
-          type: string
-        affiliation:
-          type: string
-          nullable: true
-        email:
-          type: string
-          nullable: true
-        phone:
-          type: string
-          nullable: true
-        stageId:
-          type: string
-          nullable: true
-        tags:
-          type: array
-          items:
-            type: string
-        notes:
+          description: The created appointment, present only after successful booking.
+        error:
           type: string
           nullable: true
 
-    ContactUpdate:
+    AvailabilityResult:
+      type: object
+      required: [available]
+      properties:
+        available: { type: boolean }
+        message: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string }
+
+    AdminUser:
+      type: object
+      required: [id, username, displayName]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+
+    LoginResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/AdminUser"
+
+    SessionResponse:
       type: object
       properties:
-        name:
-          type: string
-        affiliation:
-          type: string
-          nullable: true
-        email:
-          type: string
-          nullable: true
-        phone:
-          type: string
-          nullable: true
-        stageId:
-          type: string
-          nullable: true
-        tags:
-          type: array
-          items:
-            type: string
-        notes:
-          type: string
+        user:
+          allOf:
+            - $ref: "#/components/schemas/AdminUser"
           nullable: true
 
-    Interaction:
+    StatusUpdateRequest:
       type: object
-      required: [id, contactId, kind, body, occurredAt, createdAt]
+      required: [status]
       properties:
-        id:
-          type: string
-        contactId:
-          type: string
-        kind:
-          type: string
-          description: "One of note, call, meeting, email"
-        body:
-          type: string
-        occurredAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
 
-    NewInteraction:
+    AdminStats:
       type: object
-      required: [kind, body]
+      required: [total, pending, confirmed, completed, cancelled, upcoming]
       properties:
-        kind:
-          type: string
-        body:
-          type: string
-        occurredAt:
-          type: string
-          format: date-time
-
-    TagCount:
-      type: object
-      required: [tag, count]
-      properties:
-        tag:
-          type: string
-        count:
-          type: integer
-
-    Summary:
-      type: object
-      required: [totalContacts, contactsThisWeek, interactionsThisWeek, byStage]
-      properties:
-        totalContacts:
-          type: integer
-        contactsThisWeek:
-          type: integer
-        interactionsThisWeek:
-          type: integer
-        byStage:
-          type: array
-          items:
-            type: object
-            required: [stageId, stageName, count]
-            properties:
-              stageId:
-                type: string
-              stageName:
-                type: string
-              count:
-                type: integer
-
-    ActivityItem:
-      type: object
-      required: [id, contactId, contactName, kind, body, occurredAt]
-      properties:
-        id:
-          type: string
-        contactId:
-          type: string
-        contactName:
-          type: string
-        kind:
-          type: string
-        body:
-          type: string
-        occurredAt:
-          type: string
-          format: date-time
+        total: { type: integer }
+        pending: { type: integer }
+        confirmed: { type: integer }
+        completed: { type: integer }
+        cancelled: { type: integer }
+        upcoming: { type: integer }
