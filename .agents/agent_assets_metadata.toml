@@ -6,3 +6,9 @@ id = "dl1ZwvMMrGow7kFazNy17"
 uri = "file://artifacts/relationships/src/assets/clinic-bg.png"
 type = "image"
 title = "clinic background"
+
+[[generated]]
+id = "Glg0__QH6YsA-HyVo4Fuw"
+uri = "file://artifacts/relationships/public/app-icon-512.png"
+type = "image"
+title = "appointment app icon"
