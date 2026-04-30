@@ -4,6 +4,7 @@ import { Send, RotateCcw, ShieldCheck, CalendarCheck2 } from "lucide-react";
 import { useChatbotMessage } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import clinicBg from "@/assets/clinic-bg.png";
 
 type Message = {
   id: string;
@@ -129,8 +130,12 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-sky-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      <div className="mx-auto max-w-2xl px-4 py-8 flex flex-col h-screen">
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed relative"
+      style={{ backgroundImage: `url(${clinicBg})` }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/70 to-sky-50/85 dark:from-slate-950/85 dark:via-slate-900/80 dark:to-slate-950/85 backdrop-blur-[2px]" />
+      <div className="relative mx-auto max-w-2xl px-4 py-8 flex flex-col h-screen">
         <header className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white grid place-items-center">

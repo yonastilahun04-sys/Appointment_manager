@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "dl1ZwvMMrGow7kFazNy17"
+uri = "file://artifacts/relationships/src/assets/clinic-bg.png"
+type = "image"
+title = "clinic background"
