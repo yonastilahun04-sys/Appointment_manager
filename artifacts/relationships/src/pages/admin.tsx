@@ -159,10 +159,7 @@ function LoginScreen() {
             >
               {login.isPending ? "Signing in..." : "Sign in"}
             </Button>
-            <p className="text-xs text-muted-foreground text-center pt-2">
-              Default: <code>admin</code> / <code>admin123</code>
-            </p>
-            <div className="text-center">
+            <div className="text-center pt-2">
               <Link href="/" className="text-sm text-indigo-600 hover:underline">
                 ← Back to chatbot
               </Link>
