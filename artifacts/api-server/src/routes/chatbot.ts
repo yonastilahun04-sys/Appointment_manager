@@ -6,7 +6,11 @@ const router: IRouter = Router();
 
 router.post("/chatbot/message", async (req, res) => {
   const body = ChatbotMessageBody.parse(req.body);
-  const result = await handleChatbotTurn(body.message, body.state);
+  const result = await handleChatbotTurn(
+    body.message,
+    body.state,
+    body.lang ?? "en",
+  );
   res.json(result);
 });
 

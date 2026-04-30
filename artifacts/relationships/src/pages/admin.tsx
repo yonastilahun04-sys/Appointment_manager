@@ -62,6 +62,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { LangToggle, useI18n } from "@/lib/i18n";
 
 type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
@@ -89,6 +90,7 @@ function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const login = useAdminLogin();
+  const { t, lang } = useI18n();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -102,7 +104,11 @@ function LoginScreen() {
           });
         },
         onError: () => {
-          setError("Invalid username or password");
+          setError(
+            lang === "am"
+              ? "የተሳሳተ የተጠቃሚ ስም ወይም የይለፍ ቃል"
+              : "Invalid username or password",
+          );
         },
       },
     );
@@ -117,15 +123,18 @@ function LoginScreen() {
               <ShieldCheck className="w-5 h-5" />
             </div>
           </div>
-          <CardTitle className="text-center">Manager sign in</CardTitle>
+          <div className="flex justify-center mt-1">
+            <LangToggle />
+          </div>
+          <CardTitle className="text-center">{t("managerSignIn")}</CardTitle>
           <p className="text-sm text-muted-foreground text-center">
-            Access the appointment dashboard
+            {t("accessDashboard")}
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t("username")}</Label>
               <Input
                 id="username"
                 value={username}
@@ -136,7 +145,7 @@ function LoginScreen() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -157,11 +166,11 @@ function LoginScreen() {
               disabled={login.isPending}
               data-testid="button-login"
             >
-              {login.isPending ? "Signing in..." : "Sign in"}
+              {login.isPending ? t("signingIn") : t("signIn")}
             </Button>
             <div className="text-center pt-2">
               <Link href="/" className="text-sm text-indigo-600 hover:underline">
-                ← Back to chatbot
+                {t("backToChatbot")}
               </Link>
             </div>
           </form>
@@ -172,6 +181,7 @@ function LoginScreen() {
 }
 
 function Dashboard({ displayName }: { displayName: string }) {
+  const { t } = useI18n();
   const [staffFilter, setStaffFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -268,17 +278,18 @@ function Dashboard({ displayName }: { displayName: string }) {
             </div>
             <div>
               <h1 className="font-semibold leading-tight">
-                Appointment Dashboard
+                {t("appointmentsTitle")}
               </h1>
               <p className="text-xs text-muted-foreground">
-                Signed in as {displayName}
+                {t("signedInAs")} {displayName}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <LangToggle />
             <Link href="/">
               <Button variant="ghost" size="sm">
-                Open chatbot
+                {t("openChatbot")}
               </Button>
             </Link>
             <Button
@@ -289,7 +300,7 @@ function Dashboard({ displayName }: { displayName: string }) {
               className="gap-1"
             >
               <LogOut className="w-4 h-4" />
-              Sign out
+              {t("signOut")}
             </Button>
           </div>
         </div>
@@ -297,24 +308,24 @@ function Dashboard({ displayName }: { displayName: string }) {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Total" value={stats.data?.total ?? 0} />
+          <StatCard label={t("total")} value={stats.data?.total ?? 0} />
           <StatCard
-            label="Upcoming"
+            label={t("upcoming")}
             value={stats.data?.upcoming ?? 0}
             tone="indigo"
           />
           <StatCard
-            label="Pending"
+            label={t("pending")}
             value={stats.data?.pending ?? 0}
             tone="amber"
           />
           <StatCard
-            label="Confirmed"
+            label={t("confirmed")}
             value={stats.data?.confirmed ?? 0}
             tone="emerald"
           />
           <StatCard
-            label="Completed"
+            label={t("completed")}
             value={stats.data?.completed ?? 0}
             tone="slate"
           />
@@ -324,9 +335,9 @@ function Dashboard({ displayName }: { displayName: string }) {
           <CardHeader className="pb-3 space-y-3">
             <div className="flex flex-wrap gap-3 items-end justify-between">
               <div>
-                <CardTitle className="text-base">All appointments</CardTitle>
+                <CardTitle className="text-base">{t("allAppointments")}</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Search and filter stored customers
+                  {t("searchAndFilter")}
                 </p>
               </div>
               <form
@@ -338,7 +349,7 @@ function Dashboard({ displayName }: { displayName: string }) {
                   <Input
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Search customer name, phone, address..."
+                    placeholder={t("searchPlaceholder")}
                     className="pl-8 pr-8"
                     data-testid="input-search"
                   />
@@ -347,7 +358,7 @@ function Dashboard({ displayName }: { displayName: string }) {
                       type="button"
                       onClick={clearSearch}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      aria-label="Clear search"
+                      aria-label={t("clearSearch")}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -355,14 +366,15 @@ function Dashboard({ displayName }: { displayName: string }) {
                 </div>
                 <Button type="submit" size="sm" data-testid="button-search">
                   <Search className="w-4 h-4" />
-                  Search
+                  {t("search")}
                 </Button>
               </form>
             </div>
             {searchQuery && (
               <div className="text-xs text-muted-foreground">
-                Showing {appointments.length} result
-                {appointments.length === 1 ? "" : "s"} for{" "}
+                {t("showing")} {appointments.length}{" "}
+                {appointments.length === 1 ? t("result") : t("results")}{" "}
+                {t("forLabel")}{" "}
                 <span className="font-medium text-foreground">
                   "{searchQuery}"
                 </span>
@@ -370,7 +382,7 @@ function Dashboard({ displayName }: { displayName: string }) {
             )}
             <div className="flex flex-wrap gap-2 items-end">
               <div>
-                <Label className="text-xs">Staff</Label>
+                <Label className="text-xs">{t("staff")}</Label>
                   <Select
                     value={staffFilter || "__all"}
                     onValueChange={(v) =>
@@ -381,10 +393,10 @@ function Dashboard({ displayName }: { displayName: string }) {
                       className="w-44"
                       data-testid="filter-staff"
                     >
-                      <SelectValue placeholder="All staff" />
+                      <SelectValue placeholder={t("allStaff")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__all">All staff</SelectItem>
+                      <SelectItem value="__all">{t("allStaff")}</SelectItem>
                       {staffOptions.map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}
@@ -394,7 +406,7 @@ function Dashboard({ displayName }: { displayName: string }) {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs">Date</Label>
+                  <Label className="text-xs">{t("date")}</Label>
                   <Input
                     type="date"
                     value={dateFilter}
@@ -404,7 +416,7 @@ function Dashboard({ displayName }: { displayName: string }) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Status</Label>
+                  <Label className="text-xs">{t("status")}</Label>
                   <Select
                     value={statusFilter || "__all"}
                     onValueChange={(v) =>
@@ -415,14 +427,14 @@ function Dashboard({ displayName }: { displayName: string }) {
                       className="w-40"
                       data-testid="filter-status"
                     >
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue placeholder={t("allStatuses")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__all">All statuses</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="__all">{t("allStatuses")}</SelectItem>
+                      <SelectItem value="pending">{t("pending")}</SelectItem>
+                      <SelectItem value="confirmed">{t("confirmed")}</SelectItem>
+                      <SelectItem value="completed">{t("completed")}</SelectItem>
+                      <SelectItem value="cancelled">{t("cancelled")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -437,7 +449,7 @@ function Dashboard({ displayName }: { displayName: string }) {
                     setStatusFilter("");
                   }}
                 >
-                  Clear filters
+                  {t("clearFilters")}
                 </Button>
               )}
             </div>
@@ -449,20 +461,20 @@ function Dashboard({ displayName }: { displayName: string }) {
               </div>
             ) : appointments.length === 0 ? (
               <div className="p-12 text-center text-sm text-muted-foreground">
-                No appointments match these filters yet.
+                {t("noAppointments")}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>When</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Staff</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("when")}</TableHead>
+                      <TableHead>{t("customer")}</TableHead>
+                      <TableHead>{t("staff")}</TableHead>
+                      <TableHead>{t("reason")}</TableHead>
+                      <TableHead>{t("contact")}</TableHead>
+                      <TableHead>{t("status")}</TableHead>
+                      <TableHead className="text-right">{t("actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -525,18 +537,18 @@ function Dashboard({ displayName }: { displayName: string }) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this appointment?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the booking. This cannot be undone.
+              {t("deleteConfirmDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               data-testid="confirm-delete"
             >
-              Delete
+              {t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -630,6 +642,7 @@ function RowActions({
   onCancel: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center justify-end gap-1">
       {status === "pending" && (
@@ -639,7 +652,7 @@ function RowActions({
           onClick={onConfirm}
           data-testid="button-confirm"
         >
-          Confirm
+          {t("confirm")}
         </Button>
       )}
       {(status === "pending" || status === "confirmed") && (
@@ -649,7 +662,7 @@ function RowActions({
           onClick={onComplete}
           data-testid="button-complete"
         >
-          Complete
+          {t("complete")}
         </Button>
       )}
       <DropdownMenu>
@@ -662,12 +675,12 @@ function RowActions({
           {status !== "cancelled" && (
             <DropdownMenuItem onClick={onCancel}>
               <XCircle className="w-4 h-4" />
-              Cancel
+              {t("cancel")}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onClick={onDelete} className="text-destructive">
             <Trash2 className="w-4 h-4" />
-            Delete
+            {t("delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

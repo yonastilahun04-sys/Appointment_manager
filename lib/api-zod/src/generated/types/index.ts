@@ -12,6 +12,7 @@ export * from "./appointment";
 export * from "./appointmentStatus";
 export * from "./availabilityResult";
 export * from "./chatbotRequest";
+export * from "./chatbotRequestLang";
 export * from "./chatbotResponse";
 export * from "./chatbotResponseInputType";
 export * from "./chatbotState";

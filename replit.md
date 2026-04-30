@@ -24,3 +24,9 @@ Default admin credentials (seeded on first boot): `admin` / `admin123`.
 
 - The `JWT_SECRET` env var should be set in production. A dev fallback is used otherwise.
 - Cookies are non-secure in dev so the workspace iframe preview works; revisit when deploying with HTTPS.
+
+## Internationalization (i18n)
+
+- Both pages support **English** and **Amharic** via a flag toggle button in the header (🇬🇧 EN / 🇪🇹 አማ).
+- Client dictionary lives in `artifacts/relationships/src/lib/i18n.tsx` (`I18nProvider`, `useI18n`, `LangToggle`). Selected language is persisted to `localStorage` under `appt_lang`.
+- The chatbot sends a `lang` field with each turn; server replies are translated in `artifacts/api-server/src/lib/chatbot.ts` (string tables for both languages, lang-aware option labels).

@@ -5,10 +5,13 @@
  * AI-Powered Appointment Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { ChatbotRequestLang } from "./chatbotRequestLang";
 import type { ChatbotState } from "./chatbotState";
 
 export interface ChatbotRequest {
   /** The user's text input. Omit/empty to start a new conversation. */
   message?: string;
   state: ChatbotState;
+  /** Preferred reply language. Defaults to en. */
+  lang?: ChatbotRequestLang;
 }

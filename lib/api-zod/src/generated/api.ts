@@ -47,6 +47,10 @@ export const ChatbotMessageBody = zod.object({
       }),
     })
     .describe("Conversation state passed back to the server on each turn."),
+  lang: zod
+    .enum(["en", "am"])
+    .optional()
+    .describe("Preferred reply language. Defaults to en."),
 });
 
 export const ChatbotMessageResponse = zod.object({

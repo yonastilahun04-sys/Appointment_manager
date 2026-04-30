@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { LangToggle, useI18n } from "@/lib/i18n";
 import clinicBg from "@/assets/clinic-bg.png";
 
 const COUNTRY_CODES: Array<{ code: string; flag: string; name: string }> = [
@@ -71,6 +72,7 @@ export default function ChatbotPage() {
   >("text");
   const [completed, setCompleted] = useState(false);
   const [countryCode, setCountryCode] = useState<string>("+251");
+  const { lang, t } = useI18n();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
@@ -85,6 +87,17 @@ export default function ChatbotPage() {
   }, []);
 
   useEffect(() => {
+    if (!initialized.current) return;
+    setMessages([]);
+    setState(INITIAL_STATE);
+    setOptions([]);
+    setInputType("text");
+    setCompleted(false);
+    sendTurn(undefined, INITIAL_STATE);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -92,7 +105,8 @@ export default function ChatbotPage() {
 
   function sendTurn(message: string | undefined, currentState: BotState) {
     chatbot.mutate(
-      { data: { message, state: currentState } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { data: { message, state: currentState as any, lang } },
       {
         onSuccess: (res) => {
           const r = res as {
@@ -193,19 +207,22 @@ export default function ChatbotPage() {
             </div>
             <div>
               <h1 className="font-semibold text-lg leading-tight">
-                Book an appointment
+                {t("bookAppointment")}
               </h1>
               <p className="text-xs text-muted-foreground">
-                I'll guide you through it in under a minute
+                {t("guideTagline")}
               </p>
             </div>
           </div>
-          <Link href="/admin">
-            <Button variant="ghost" size="sm" className="gap-1">
-              <ShieldCheck className="w-4 h-4" />
-              Manager
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <LangToggle />
+            <Link href="/admin">
+              <Button variant="ghost" size="sm" className="gap-1">
+                <ShieldCheck className="w-4 h-4" />
+                {t("manager")}
+              </Button>
+            </Link>
+          </div>
         </header>
 
         <div className="flex-1 flex flex-col bg-card rounded-2xl border shadow-sm overflow-hidden">
@@ -243,7 +260,10 @@ export default function ChatbotPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (opt.toLowerCase().startsWith("book another")) {
+                    if (
+                      opt.toLowerCase().startsWith("book another") ||
+                      opt.startsWith("ሌላ ቀጠሮ")
+                    ) {
                       restart();
                     } else {
                       submitText(opt);
@@ -288,12 +308,12 @@ export default function ChatbotPage() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={
                   inputType === "datetime"
-                    ? "Pick a date and time"
+                    ? t("pickDateTime")
                     : state.step === "ask_phone"
                     ? "911 223344"
                     : inputType === "choice"
-                    ? "Tap an option above or type a name"
-                    : "Type your reply..."
+                    ? t("tapOption")
+                    : t("typeReply")
                 }
                 type={
                   inputType === "datetime"
@@ -321,18 +341,18 @@ export default function ChatbotPage() {
           {completed && (
             <div className="border-t p-3 flex items-center justify-between bg-muted/30">
               <span className="text-sm text-muted-foreground">
-                Need to book another?
+                {t("needAnother")}
               </span>
               <Button onClick={restart} size="sm" className="gap-1">
                 <RotateCcw className="w-4 h-4" />
-                Start over
+                {t("startOver")}
               </Button>
             </div>
           )}
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-3">
-          Powered by an AI booking assistant
+          {t("poweredBy")}
         </p>
       </div>
     </div>

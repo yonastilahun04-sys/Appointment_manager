@@ -318,6 +318,10 @@ components:
           description: The user's text input. Omit/empty to start a new conversation.
         state:
           $ref: "#/components/schemas/ChatbotState"
+        lang:
+          type: string
+          enum: [en, am]
+          description: Preferred reply language. Defaults to en.
 
     ChatbotResponse:
       type: object

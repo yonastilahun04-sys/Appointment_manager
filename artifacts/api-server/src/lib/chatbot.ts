@@ -7,6 +7,8 @@ import type {
   AppointmentRow,
 } from "./types";
 
+export type Lang = "en" | "am";
+
 function isValidPhone(input: string): boolean {
   const cleaned = input.trim();
   if (!cleaned) return false;
@@ -24,6 +26,83 @@ const STAFF_OPTIONS = [
   "Dr. Dereje",
 ];
 
+type Strings = {
+  welcome: string;
+  niceToMeet: (firstName: string) => string;
+  askAddress: string;
+  askPhone: string;
+  askReason: string;
+  askStaff: string;
+  askDateTime: (staff: string) => string;
+  confirmed: (staff: string, when: string, phone: string) => string;
+  bookAnother: string;
+  errNoName: string;
+  errNoAddress: string;
+  errPhone: string;
+  errNoReason: string;
+  errPickStaff: string;
+  errBadDate: string;
+  errPastDate: string;
+  errBooked: (staff: string, when: string) => string;
+  errSave: string;
+};
+
+const EN: Strings = {
+  welcome: "Welcome! What is your full name?",
+  niceToMeet: (n) => `Nice to meet you, ${n}! What is your address?`,
+  askAddress: "Please share your address so we can keep it on file.",
+  askPhone: "Got it. Can I have your phone number?",
+  askReason: "Thanks. What is the reason for your visit?",
+  askStaff: "Who would you like to meet with?",
+  askDateTime: (s) =>
+    `Great. What date and time would you like to meet ${s}? (Pick a date & time)`,
+  confirmed: (s, w, p) =>
+    `Appointment confirmed! See you then.\n\nWith: ${s}\nWhen: ${w}\n\nWe'll reach out at ${p} if anything changes.`,
+  bookAnother: "Book another appointment",
+  errNoName: "I didn't catch that. What is your full name?",
+  errNoAddress: "Please share your address so we can keep it on file.",
+  errPhone:
+    "That phone number doesn't look right. Please include the country code if you have one — for example +251 911 223344, +1 555 123 4567, or 0911223344.",
+  errNoReason:
+    "A short description of the reason helps us prepare. What is the reason for your visit?",
+  errPickStaff: "Please pick a staff member.",
+  errBadDate: "I couldn't read that time. Please pick a valid date and time.",
+  errPastDate:
+    "That time is in the past. Please choose a future date and time.",
+  errBooked: (s, w) =>
+    `I'm sorry, ${s} is already booked at ${w}. Please pick another time.`,
+  errSave:
+    "Sorry, something went wrong saving your appointment. Please try a different time.",
+};
+
+const AM: Strings = {
+  welcome: "እንኳን ደህና መጡ! ሙሉ ስምዎ ማን ነው?",
+  niceToMeet: (n) => `ደስ ብሎኛል፣ ${n}! አድራሻዎ ምንድነው?`,
+  askAddress: "እባክዎ አድራሻዎን ያጋሩ።",
+  askPhone: "እሺ። ስልክ ቁጥርዎን እባክዎ።",
+  askReason: "አመሰግናለሁ። የጉብኝትዎ ምክንያት ምንድነው?",
+  askStaff: "ከማን ጋር መገናኘት ይፈልጋሉ?",
+  askDateTime: (s) =>
+    `በጣም ጥሩ። ${s} ጋር መቼ መገናኘት ይፈልጋሉ? (ቀንና ሰዓት ይምረጡ)`,
+  confirmed: (s, w, p) =>
+    `ቀጠሮዎ ተረጋግጧል! በዚያን ጊዜ እንገናኛለን።\n\nከ: ${s}\nመቼ: ${w}\n\nነገር ቢለወጥ በ ${p} እንጠራዎታለን።`,
+  bookAnother: "ሌላ ቀጠሮ ይያዙ",
+  errNoName: "አልገባኝም። ሙሉ ስምዎ ማን ነው?",
+  errNoAddress: "እባክዎ አድራሻዎን ያጋሩ።",
+  errPhone:
+    "ስልክ ቁጥሩ ትክክል አይመስልም። እባክዎ የአገር ኮድ ጨምረው ያስገቡ — ለምሳሌ +251 911 223344።",
+  errNoReason: "የጉብኝትዎ ምክንያት አጭር መግለጫ ያስፈልገናል።",
+  errPickStaff: "እባክዎ ሐኪም ይምረጡ።",
+  errBadDate: "ጊዜውን ማንበብ አልቻልኩም። እባክዎ ትክክለኛ ቀንና ሰዓት ይምረጡ።",
+  errPastDate: "ይህ ጊዜ ካለፈ ነው። እባክዎ ወደፊት ያለ ቀን ይምረጡ።",
+  errBooked: (s, w) => `ይቅርታ፣ ${s} በ ${w} ቀድሞ ተይዟል። እባክዎ ሌላ ጊዜ ይምረጡ።`,
+  errSave: "ይቅርታ፣ ቀጠሮዎን ሲያስቀምጥ ችግር ተፈጥሯል። እባክዎ ሌላ ጊዜ ይሞክሩ።",
+};
+
+function pick(lang: Lang | undefined): Strings {
+  return lang === "am" ? AM : EN;
+}
+
 function emptyState(): ChatbotState {
   return { step: "greeting", data: {} };
 }
@@ -40,8 +119,8 @@ function parseDateTime(input: string): Date | null {
   return null;
 }
 
-function formatAppointmentTime(d: Date): string {
-  return d.toLocaleString("en-US", {
+function formatAppointmentTime(d: Date, lang: Lang): string {
+  return d.toLocaleString(lang === "am" ? "am-ET" : "en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -54,29 +133,28 @@ function formatAppointmentTime(d: Date): string {
 export async function handleChatbotTurn(
   message: string | undefined,
   incomingState: ChatbotState | undefined,
+  lang: Lang = "en",
 ): Promise<ChatbotResponse> {
   let state: ChatbotState = incomingState ?? emptyState();
   const text = trim(message);
+  const S = pick(lang);
 
-  // Allow restart at any time
-  if (text.toLowerCase() === "restart" || text.toLowerCase() === "start over") {
+  if (
+    text.toLowerCase() === "restart" ||
+    text.toLowerCase() === "start over" ||
+    text === "እንደገና"
+  ) {
     state = emptyState();
-    return greet();
+    return greet(lang);
   }
 
   switch (state.step) {
     case "greeting":
-      return greet();
+      return greet(lang);
 
     case "ask_name": {
       if (!text) {
-        return reply(
-          state,
-          "I didn't catch that. What is your full name?",
-          "ask_name",
-          "text",
-          true,
-        );
+        return reply(state, S.errNoName, "ask_name", "text", true);
       }
       const next: ChatbotState = {
         step: "ask_address",
@@ -84,7 +162,7 @@ export async function handleChatbotTurn(
       };
       return reply(
         next,
-        `Nice to meet you, ${text.split(" ")[0]}! What is your address?`,
+        S.niceToMeet(text.split(" ")[0]),
         "ask_address",
         "text",
       );
@@ -92,64 +170,36 @@ export async function handleChatbotTurn(
 
     case "ask_address": {
       if (!text) {
-        return reply(
-          state,
-          "Please share your address so we can keep it on file.",
-          "ask_address",
-          "text",
-          true,
-        );
+        return reply(state, S.errNoAddress, "ask_address", "text", true);
       }
       const next: ChatbotState = {
         step: "ask_phone",
         data: { ...state.data, address: text },
       };
-      return reply(
-        next,
-        "Got it. Can I have your phone number?",
-        "ask_phone",
-        "text",
-      );
+      return reply(next, S.askPhone, "ask_phone", "text");
     }
 
     case "ask_phone": {
       if (!isValidPhone(text)) {
-        return reply(
-          state,
-          "That phone number doesn't look right. Please include the country code if you have one — for example +251 911 223344, +1 555 123 4567, or 0911223344.",
-          "ask_phone",
-          "text",
-          true,
-        );
+        return reply(state, S.errPhone, "ask_phone", "text", true);
       }
       const next: ChatbotState = {
         step: "ask_reason",
         data: { ...state.data, phoneNumber: text.trim() },
       };
-      return reply(
-        next,
-        "Thanks. What is the reason for your visit?",
-        "ask_reason",
-        "text",
-      );
+      return reply(next, S.askReason, "ask_reason", "text");
     }
 
     case "ask_reason": {
       if (!text) {
-        return reply(
-          state,
-          "A short description of the reason helps us prepare. What is the reason for your visit?",
-          "ask_reason",
-          "text",
-          true,
-        );
+        return reply(state, S.errNoReason, "ask_reason", "text", true);
       }
       const next: ChatbotState = {
         step: "ask_staff",
         data: { ...state.data, reason: text },
       };
       return {
-        reply: "Who would you like to meet with?",
+        reply: S.askStaff,
         state: next,
         options: STAFF_OPTIONS,
         inputType: "choice",
@@ -159,7 +209,7 @@ export async function handleChatbotTurn(
     case "ask_staff": {
       if (!text) {
         return {
-          reply: "Please pick a staff member.",
+          reply: S.errPickStaff,
           state,
           options: STAFF_OPTIONS,
           inputType: "choice",
@@ -170,33 +220,16 @@ export async function handleChatbotTurn(
         step: "ask_datetime",
         data: { ...state.data, requestedStaff: text },
       };
-      return reply(
-        next,
-        `Great. What date and time would you like to meet ${text}? (Pick a date & time)`,
-        "ask_datetime",
-        "datetime",
-      );
+      return reply(next, S.askDateTime(text), "ask_datetime", "datetime");
     }
 
     case "ask_datetime": {
       const date = parseDateTime(text);
       if (!date) {
-        return reply(
-          state,
-          "I couldn't read that time. Please pick a valid date and time.",
-          "ask_datetime",
-          "datetime",
-          true,
-        );
+        return reply(state, S.errBadDate, "ask_datetime", "datetime", true);
       }
       if (date.getTime() < Date.now()) {
-        return reply(
-          state,
-          "That time is in the past. Please choose a future date and time.",
-          "ask_datetime",
-          "datetime",
-          true,
-        );
+        return reply(state, S.errPastDate, "ask_datetime", "datetime", true);
       }
       const staff = state.data.requestedStaff!;
       const conflict = await db
@@ -211,14 +244,13 @@ export async function handleChatbotTurn(
       if (conflict.length > 0) {
         return reply(
           state,
-          `I'm sorry, ${staff} is already booked at ${formatAppointmentTime(date)}. Please pick another time.`,
+          S.errBooked(staff, formatAppointmentTime(date, lang)),
           "ask_datetime",
           "datetime",
           true,
         );
       }
 
-      // Save the appointment
       try {
         const row = {
           id: randomUUID(),
@@ -239,33 +271,31 @@ export async function handleChatbotTurn(
           data: { ...state.data, appointmentDate: date.toISOString() },
         };
         return {
-          reply: `Appointment confirmed! See you then.\n\nWith: ${staff}\nWhen: ${formatAppointmentTime(date)}\n\nWe'll reach out at ${row.phoneNumber} if anything changes.`,
+          reply: S.confirmed(
+            staff,
+            formatAppointmentTime(date, lang),
+            row.phoneNumber,
+          ),
           state: next,
-          options: ["Book another appointment"],
+          options: [S.bookAnother],
           inputType: "none",
           appointment: serializeAppointment(inserted),
         };
       } catch {
-        return reply(
-          state,
-          "Sorry, something went wrong saving your appointment. Please try a different time.",
-          "ask_datetime",
-          "datetime",
-          true,
-        );
+        return reply(state, S.errSave, "ask_datetime", "datetime", true);
       }
     }
 
     case "done":
     case "confirm":
     default:
-      return greet();
+      return greet(lang);
   }
 }
 
-function greet(): ChatbotResponse {
+function greet(lang: Lang): ChatbotResponse {
   return {
-    reply: "Welcome! What is your full name?",
+    reply: pick(lang).welcome,
     state: { step: "ask_name", data: {} },
     options: [],
     inputType: "text",

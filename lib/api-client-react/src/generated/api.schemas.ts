@@ -85,10 +85,23 @@ export interface ChatbotState {
   data: ChatbotStateData;
 }
 
+/**
+ * Preferred reply language. Defaults to en.
+ */
+export type ChatbotRequestLang =
+  (typeof ChatbotRequestLang)[keyof typeof ChatbotRequestLang];
+
+export const ChatbotRequestLang = {
+  en: "en",
+  am: "am",
+} as const;
+
 export interface ChatbotRequest {
   /** The user's text input. Omit/empty to start a new conversation. */
   message?: string;
   state: ChatbotState;
+  /** Preferred reply language. Defaults to en. */
+  lang?: ChatbotRequestLang;
 }
 
 export type ChatbotResponseInputType =
