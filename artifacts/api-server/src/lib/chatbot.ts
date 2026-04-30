@@ -7,7 +7,13 @@ import type {
   AppointmentRow,
 } from "./types";
 
-const PHONE_REGEX = /^[+]?[\d][\d\s\-().]{6,}$/;
+function isValidPhone(input: string): boolean {
+  const cleaned = input.trim();
+  if (!cleaned) return false;
+  if (!/^[+\d\s\-().]+$/.test(cleaned)) return false;
+  const digits = cleaned.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
 
 const STAFF_OPTIONS = [
   "Dr. Yonas",
@@ -105,17 +111,17 @@ export async function handleChatbotTurn(
     }
 
     case "ask_phone": {
-      if (!PHONE_REGEX.test(text)) {
+      if (!isValidPhone(text)) {
         return reply(
           state,
-          "That phone number doesn't look right. Please enter a valid number (e.g. +1 555 123 4567).",
+          "That phone number doesn't look right. Please include the country code if you have one — for example +251 911 223344, +1 555 123 4567, or 0911223344.",
           "ask_phone",
           "text",
         );
       }
       const next: ChatbotState = {
         step: "ask_reason",
-        data: { ...state.data, phoneNumber: text },
+        data: { ...state.data, phoneNumber: text.trim() },
       };
       return reply(
         next,
