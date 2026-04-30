@@ -56,8 +56,10 @@ import {
   Loader2,
   LogOut,
   MoreHorizontal,
+  Search,
   ShieldCheck,
   Trash2,
+  X,
   XCircle,
 } from "lucide-react";
 
@@ -176,6 +178,8 @@ function Dashboard({ displayName }: { displayName: string }) {
   const [staffFilter, setStaffFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
@@ -220,7 +224,7 @@ function Dashboard({ displayName }: { displayName: string }) {
     });
   }
 
-  const appointments = (list.data ?? []) as Array<{
+  const allAppointments = (list.data ?? []) as Array<{
     id: string;
     fullName: string;
     address: string;
@@ -232,9 +236,30 @@ function Dashboard({ displayName }: { displayName: string }) {
     createdAt: string;
   }>;
 
+  const q = searchQuery.trim().toLowerCase();
+  const appointments = q
+    ? allAppointments.filter(
+        (a) =>
+          a.fullName.toLowerCase().includes(q) ||
+          a.phoneNumber.toLowerCase().includes(q) ||
+          a.address.toLowerCase().includes(q) ||
+          a.reason.toLowerCase().includes(q),
+      )
+    : allAppointments;
+
   const staffOptions = Array.from(
-    new Set(appointments.map((a) => a.requestedStaff)),
+    new Set(allAppointments.map((a) => a.requestedStaff)),
   ).sort();
+
+  function runSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setSearchQuery(searchInput);
+  }
+
+  function clearSearch() {
+    setSearchInput("");
+    setSearchQuery("");
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -299,17 +324,56 @@ function Dashboard({ displayName }: { displayName: string }) {
         </section>
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 space-y-3">
             <div className="flex flex-wrap gap-3 items-end justify-between">
               <div>
                 <CardTitle className="text-base">All appointments</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Filter, confirm, complete, or remove bookings
+                  Search and filter stored customers
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <div>
-                  <Label className="text-xs">Staff</Label>
+              <form
+                onSubmit={runSearch}
+                className="flex items-center gap-2 w-full sm:w-96"
+              >
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="Search customer name, phone, address..."
+                    className="pl-8 pr-8"
+                    data-testid="input-search"
+                  />
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <Button type="submit" size="sm" data-testid="button-search">
+                  <Search className="w-4 h-4" />
+                  Search
+                </Button>
+              </form>
+            </div>
+            {searchQuery && (
+              <div className="text-xs text-muted-foreground">
+                Showing {appointments.length} result
+                {appointments.length === 1 ? "" : "s"} for{" "}
+                <span className="font-medium text-foreground">
+                  "{searchQuery}"
+                </span>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2 items-end">
+              <div>
+                <Label className="text-xs">Staff</Label>
                   <Select
                     value={staffFilter || "__all"}
                     onValueChange={(v) =>
@@ -365,21 +429,20 @@ function Dashboard({ displayName }: { displayName: string }) {
                     </SelectContent>
                   </Select>
                 </div>
-                {(staffFilter || dateFilter || statusFilter) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="self-end"
-                    onClick={() => {
-                      setStaffFilter("");
-                      setDateFilter("");
-                      setStatusFilter("");
-                    }}
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
+              {(staffFilter || dateFilter || statusFilter) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="self-end"
+                  onClick={() => {
+                    setStaffFilter("");
+                    setDateFilter("");
+                    setStatusFilter("");
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-0">

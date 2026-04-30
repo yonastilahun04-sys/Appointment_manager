@@ -10,11 +10,12 @@ import type {
 const PHONE_REGEX = /^[+]?[\d][\d\s\-().]{6,}$/;
 
 const STAFF_OPTIONS = [
-  "Dr. Smith",
-  "Dr. Patel",
-  "Dr. Garcia",
-  "Ms. Chen",
-  "Mr. Johnson",
+  "Dr. Yonas",
+  "Dr. Abebe",
+  "Dr. Adelegn",
+  "Dr. Rosa",
+  "Dr. Kalkidan",
+  "Dr. Dereje",
 ];
 
 function emptyState(): ChatbotState {
