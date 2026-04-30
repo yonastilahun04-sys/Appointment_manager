@@ -1,0 +1,32 @@
+​Technical Master Prompt (for Java Development)
+​Role: Senior Java Developer
+Project: AI-Powered Appointment Management System (Chatbot-Driven)
+Tech Stack: Java (Spring Boot preferred for backend), MySQL/PostgreSQL, and Thymeleaf or React for the UI.
+​Core Instructions:
+​Build a Java application with two main modules: User Interface (Chatbot) and Manager Dashboard.
+​1. Backend Logic (Java/Spring Boot)
+​Database Schema: Create an Appointment entity with fields: id (Long), fullName (String), address (String), phoneNumber (String), reason (String), requestedStaff (String), appointmentDate (LocalDateTime), and status (Enum).
+​Conflict Detection: Implement a service method that checks if an appointment already exists for the same requestedStaff and appointmentDate before saving.
+​API Endpoints: 
+​POST /api/appointments/book: To process chatbot data.
+​GET /api/appointments/check-availability: To verify dates.
+​GET /api/admin/appointments: For the manager to view all data.
+​2. User Interface (The Chatbot Logic)
+​The UI should be a chatbot window. The Java backend should handle the conversation state:
+​Step 1: Bot asks: "Welcome! What is your full name?"
+​Step 2: Bot asks: "Where is your address?"
+​Step 3: Bot asks: "Can I have your phone number?"
+​Step 4: Bot asks: "What is the reason for your visit?"
+​Step 5: Bot asks: "Who do you want to meet and on what date/time?"
+​Validation: When the user submits the date, the Java controller must check the database. 
+​If Taken: Return a message: "I'm sorry, that slot is already booked. Please try another time."
+​If Free: Save the data and return: "Appointment confirmed! See you then."
+​3. Manager Interface (The Dashboard)
+​Create a secure login page.
+​A dashboard that displays all appointments in a clean table.
+​Search/Filter: Allow the manager to filter appointments by date or staff name.
+​Action Buttons: Add "Confirm," "Complete," or "Delete" buttons for each record.
+​4. Advanced Features to Include:
+​Validation: Ensure the phone number is a valid format and the date is not in the past.
+​Exception Handling: Handle database errors gracefully and return user-friendly messages through the chatbot.
+​Clean UI: Use Bootstrap or Tailwind CSS for the chatbot bubbles and the admin table.
