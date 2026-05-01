@@ -49,7 +49,7 @@ type Strings = {
 
 const EN: Strings = {
   welcome: "Welcome! What is your full name?",
-  niceToMeet: (n) => `Nice to meet you, ${n}! What is your address?`,
+  niceToMeet: (n) => `Nice to meet you, ${n}! Where do you live?`,
   askAddress: "Please share your address so we can keep it on file.",
   askPhone: "Got it. Can I have your phone number?",
   askReason: "Thanks. What is the reason for your visit?",
@@ -60,7 +60,7 @@ const EN: Strings = {
     `Appointment confirmed! See you then.\n\nWith: ${s}\nWhen: ${w}\n\nWe'll reach out at ${p} if anything changes.`,
   bookAnother: "Book another appointment",
   errNoName: "I didn't catch that. What is your full name?",
-  errNoAddress: "Please share your address so we can keep it on file.",
+  errNoAddress: "Please share your address — where do you live?",
   errPhone:
     "That phone number doesn't look right. Please include the country code if you have one — for example +251 911 223344, +1 555 123 4567, or 0911223344.",
   errNoReason:
