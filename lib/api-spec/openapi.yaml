@@ -228,6 +228,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /admin/patients:
+    get:
+      operationId: listPatients
+      tags: [admin]
+      summary: List all unique patients with their appointment history
+      responses:
+        "200":
+          description: Patient list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -274,6 +295,7 @@ components:
         fullName: { type: string }
         address: { type: string }
         phoneNumber: { type: string }
+        email: { type: string, nullable: true }
         reason: { type: string }
         requestedStaff: { type: string }
         appointmentDate: { type: string, format: date-time }
@@ -281,6 +303,20 @@ components:
           $ref: "#/components/schemas/AppointmentStatus"
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+
+    Patient:
+      type: object
+      required: [phoneNumber, fullName, appointmentCount, appointments]
+      properties:
+        phoneNumber: { type: string }
+        fullName: { type: string }
+        email: { type: string, nullable: true }
+        appointmentCount: { type: integer }
+        lastAppointment: { type: string, format: date-time, nullable: true }
+        appointments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Appointment"
 
     ChatbotState:
       type: object
@@ -294,6 +330,7 @@ components:
             - ask_name
             - ask_address
             - ask_phone
+            - ask_email
             - ask_reason
             - ask_staff
             - ask_datetime
@@ -305,6 +342,7 @@ components:
             fullName: { type: string, nullable: true }
             address: { type: string, nullable: true }
             phoneNumber: { type: string, nullable: true }
+            email: { type: string, nullable: true }
             reason: { type: string, nullable: true }
             requestedStaff: { type: string, nullable: true }
             appointmentDate: { type: string, format: date-time, nullable: true }

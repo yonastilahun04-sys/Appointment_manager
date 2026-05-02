@@ -36,7 +36,7 @@ router.get("/admin/appointments", requireAdmin, async (req, res) => {
 
 router.put("/admin/appointments/:id/status", requireAdmin, async (req, res) => {
   const body = UpdateAppointmentStatusBody.parse(req.body);
-  const id = req.params.id;
+  const id = String(req.params.id);
   const [updated] = await db
     .update(appointmentsTable)
     .set({ status: body.status, updatedAt: new Date() })
@@ -50,7 +50,7 @@ router.put("/admin/appointments/:id/status", requireAdmin, async (req, res) => {
 });
 
 router.delete("/admin/appointments/:id", requireAdmin, async (req, res) => {
-  const id = req.params.id;
+  const id = String(req.params.id);
   const [deleted] = await db
     .delete(appointmentsTable)
     .where(eq(appointmentsTable.id, id))
@@ -83,6 +83,47 @@ router.get("/admin/stats", requireAdmin, async (_req, res) => {
     }
   }
   res.json(stats);
+});
+
+router.get("/admin/patients", requireAdmin, async (_req, res) => {
+  const rows = await db
+    .select()
+    .from(appointmentsTable)
+    .orderBy(sql`${appointmentsTable.appointmentDate} desc`);
+
+  const map = new Map<
+    string,
+    {
+      phoneNumber: string;
+      fullName: string;
+      email: string | null;
+      appointments: ReturnType<typeof serializeAppointment>[];
+    }
+  >();
+
+  for (const row of rows) {
+    const key = row.phoneNumber;
+    if (!map.has(key)) {
+      map.set(key, {
+        phoneNumber: row.phoneNumber,
+        fullName: row.fullName,
+        email: row.email ?? null,
+        appointments: [],
+      });
+    }
+    map.get(key)!.appointments.push(serializeAppointment(row));
+  }
+
+  const patients = Array.from(map.values()).map((p) => ({
+    phoneNumber: p.phoneNumber,
+    fullName: p.fullName,
+    email: p.email,
+    appointmentCount: p.appointments.length,
+    lastAppointment: p.appointments[0]?.appointmentDate ?? null,
+    appointments: p.appointments,
+  }));
+
+  res.json(patients);
 });
 
 export default router;

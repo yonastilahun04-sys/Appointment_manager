@@ -39,12 +39,25 @@ export interface Appointment {
   fullName: string;
   address: string;
   phoneNumber: string;
+  /** @nullable */
+  email?: string | null;
   reason: string;
   requestedStaff: string;
   appointmentDate: string;
   status: AppointmentStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Patient {
+  phoneNumber: string;
+  fullName: string;
+  /** @nullable */
+  email?: string | null;
+  appointmentCount: number;
+  /** @nullable */
+  lastAppointment?: string | null;
+  appointments: Appointment[];
 }
 
 export type ChatbotStateStep =
@@ -55,6 +68,7 @@ export const ChatbotStateStep = {
   ask_name: "ask_name",
   ask_address: "ask_address",
   ask_phone: "ask_phone",
+  ask_email: "ask_email",
   ask_reason: "ask_reason",
   ask_staff: "ask_staff",
   ask_datetime: "ask_datetime",
@@ -69,6 +83,8 @@ export type ChatbotStateData = {
   address?: string | null;
   /** @nullable */
   phoneNumber?: string | null;
+  /** @nullable */
+  email?: string | null;
   /** @nullable */
   reason?: string | null;
   /** @nullable */

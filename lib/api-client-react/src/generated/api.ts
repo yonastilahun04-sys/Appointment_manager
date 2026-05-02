@@ -29,6 +29,7 @@ import type {
   LoginRequest,
   LoginResponse,
   OkResponse,
+  Patient,
   SessionResponse,
   StatusUpdateRequest,
 } from "./api.schemas";
@@ -883,6 +884,81 @@ export function useGetAdminStats<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAdminStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all unique patients with their appointment history
+ */
+export const getListPatientsUrl = () => {
+  return `/api/admin/patients`;
+};
+
+export const listPatients = async (
+  options?: RequestInit,
+): Promise<Patient[]> => {
+  return customFetch<Patient[]>(getListPatientsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPatientsQueryKey = () => {
+  return [`/api/admin/patients`] as const;
+};
+
+export const getListPatientsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPatients>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPatients>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListPatientsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPatients>>> = ({
+    signal,
+  }) => listPatients({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPatients>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPatientsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPatients>>
+>;
+export type ListPatientsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List all unique patients with their appointment history
+ */
+
+export function useListPatients<
+  TData = Awaited<ReturnType<typeof listPatients>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPatients>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPatientsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

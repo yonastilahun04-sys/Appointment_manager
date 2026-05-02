@@ -1,6 +1,7 @@
 import { db, appointmentsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
+import { sendBookingConfirmation } from "./mailer";
 import type {
   ChatbotState,
   ChatbotResponse,
@@ -17,6 +18,10 @@ function isValidPhone(input: string): boolean {
   return digits.length >= 7 && digits.length <= 15;
 }
 
+function isValidEmail(input: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
+}
+
 const STAFF_OPTIONS = [
   "Dr. Yonas",
   "Dr. Abebe",
@@ -31,6 +36,7 @@ type Strings = {
   niceToMeet: (firstName: string) => string;
   askAddress: string;
   askPhone: string;
+  askEmail: string;
   askReason: string;
   askStaff: string;
   askDateTime: (staff: string) => string;
@@ -39,6 +45,7 @@ type Strings = {
   errNoName: string;
   errNoAddress: string;
   errPhone: string;
+  errInvalidEmail: string;
   errNoReason: string;
   errPickStaff: string;
   errBadDate: string;
@@ -52,6 +59,7 @@ const EN: Strings = {
   niceToMeet: (n) => `Nice to meet you, ${n}! Where do you live?`,
   askAddress: "Please share your address so we can keep it on file.",
   askPhone: "Got it. Can I have your phone number?",
+  askEmail: "Thanks! What is your email address? We'll send you a booking confirmation.",
   askReason: "Thanks. What is the reason for your visit?",
   askStaff: "Who would you like to meet with?",
   askDateTime: (s) =>
@@ -63,6 +71,8 @@ const EN: Strings = {
   errNoAddress: "Please share your address — where do you live?",
   errPhone:
     "That phone number doesn't look right. Please include the country code if you have one — for example +251 911 223344, +1 555 123 4567, or 0911223344.",
+  errInvalidEmail:
+    "That doesn't look like a valid email. Please enter something like name@example.com.",
   errNoReason:
     "A short description of the reason helps us prepare. What is the reason for your visit?",
   errPickStaff: "Please pick a staff member.",
@@ -80,6 +90,7 @@ const AM: Strings = {
   niceToMeet: (n) => `ደስ ብሎኛል፣ ${n}! የት ይኖራሉ?`,
   askAddress: "እባክዎ አድራሻዎን ያጋሩ።",
   askPhone: "እሺ። ስልክ ቁጥርዎን እባክዎ።",
+  askEmail: "አመሰግናለሁ! የኢሜይል አድራሻዎን ያስገቡ። የቀጠሮ ማረጋገጫ እንልክልዎታለን።",
   askReason: "አመሰግናለሁ። የጉብኝትዎ ምክንያት ምንድነው?",
   askStaff: "ከማን ጋር መገናኘት ይፈልጋሉ?",
   askDateTime: (s) =>
@@ -91,6 +102,8 @@ const AM: Strings = {
   errNoAddress: "አድራሻዎን ያጋሩ — የት ይኖራሉ?",
   errPhone:
     "ስልክ ቁጥሩ ትክክል አይመስልም። እባክዎ የአገር ኮድ ጨምረው ያስገቡ — ለምሳሌ +251 911 223344።",
+  errInvalidEmail:
+    "ኢሜይሉ ትክክል አይመስልም። እንደ name@example.com ቅርጸት ያስገቡ።",
   errNoReason: "የጉብኝትዎ ምክንያት አጭር መግለጫ ያስፈልገናል።",
   errPickStaff: "እባክዎ ሐኪም ይምረጡ።",
   errBadDate: "ጊዜውን ማንበብ አልቻልኩም። እባክዎ ትክክለኛ ቀንና ሰዓት ይምረጡ።",
@@ -184,8 +197,19 @@ export async function handleChatbotTurn(
         return reply(state, S.errPhone, "ask_phone", "text", true);
       }
       const next: ChatbotState = {
-        step: "ask_reason",
+        step: "ask_email",
         data: { ...state.data, phoneNumber: text.trim() },
+      };
+      return reply(next, S.askEmail, "ask_email", "text");
+    }
+
+    case "ask_email": {
+      if (!isValidEmail(text)) {
+        return reply(state, S.errInvalidEmail, "ask_email", "text", true);
+      }
+      const next: ChatbotState = {
+        step: "ask_reason",
+        data: { ...state.data, email: text.trim() },
       };
       return reply(next, S.askReason, "ask_reason", "text");
     }
@@ -257,6 +281,7 @@ export async function handleChatbotTurn(
           fullName: state.data.fullName!,
           address: state.data.address!,
           phoneNumber: state.data.phoneNumber!,
+          email: state.data.email ?? null,
           reason: state.data.reason!,
           requestedStaff: staff,
           appointmentDate: date,
@@ -270,12 +295,23 @@ export async function handleChatbotTurn(
           step: "done",
           data: { ...state.data, appointmentDate: date.toISOString() },
         };
-        return {
-          reply: S.confirmed(
+
+        const whenFormatted = formatAppointmentTime(date, lang);
+
+        if (row.email) {
+          sendBookingConfirmation({
+            to: row.email,
+            fullName: row.fullName,
             staff,
-            formatAppointmentTime(date, lang),
-            row.phoneNumber,
-          ),
+            when: whenFormatted,
+            reason: row.reason,
+            phone: row.phoneNumber,
+            lang,
+          }).catch(() => {});
+        }
+
+        return {
+          reply: S.confirmed(staff, whenFormatted, row.phoneNumber),
           state: next,
           options: [S.bookAnother],
           inputType: "none",
@@ -324,6 +360,7 @@ export function serializeAppointment(row: AppointmentRow) {
     fullName: row.fullName,
     address: row.address,
     phoneNumber: row.phoneNumber,
+    email: row.email ?? null,
     reason: row.reason,
     requestedStaff: row.requestedStaff,
     appointmentDate: row.appointmentDate.toISOString(),

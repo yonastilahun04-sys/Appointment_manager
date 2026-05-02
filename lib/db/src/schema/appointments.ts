@@ -14,6 +14,7 @@ export const appointmentsTable = pgTable(
     fullName: text("full_name").notNull(),
     address: text("address").notNull(),
     phoneNumber: text("phone_number").notNull(),
+    email: text("email"),
     reason: text("reason").notNull(),
     requestedStaff: text("requested_staff").notNull(),
     appointmentDate: timestamp("appointment_date", { withTimezone: true }).notNull(),

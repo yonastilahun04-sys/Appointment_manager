@@ -5,6 +5,7 @@ export type ChatbotStep =
   | "ask_name"
   | "ask_address"
   | "ask_phone"
+  | "ask_email"
   | "ask_reason"
   | "ask_staff"
   | "ask_datetime"
@@ -15,6 +16,7 @@ export type ChatbotData = {
   fullName?: string;
   address?: string;
   phoneNumber?: string;
+  email?: string;
   reason?: string;
   requestedStaff?: string;
   appointmentDate?: string;

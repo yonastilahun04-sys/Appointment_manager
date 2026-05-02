@@ -108,6 +108,24 @@ export const dict: Dict = {
   },
   yes: { en: "Yes, delete", am: "አዎ፣ ሰርዝ" },
   no: { en: "Cancel", am: "ተወው" },
+
+  // Email / chatbot
+  email: { en: "Email", am: "ኢሜይል" },
+  typeEmail: { en: "your@email.com", am: "your@email.com" },
+
+  // Patients tab
+  patients: { en: "Patients", am: "ታካሚዎች" },
+  patientsDesc: { en: "All registered patients and their appointment history", am: "ሁሉም ተመዝጋቢ ታካሚዎች እና የቀጠሮ ታሪካቸው" },
+  appointments: { en: "Appointments", am: "ቀጠሮዎች" },
+  appointmentsTab: { en: "Appointments", am: "ቀጠሮዎች" },
+  patientsTab: { en: "Patients", am: "ታካሚዎች" },
+  noPatients: { en: "No patients registered yet.", am: "ምንም ታካሚ አልተመዘገበም።" },
+  history: { en: "History", am: "ታሪክ" },
+  lastVisit: { en: "Last visit", am: "የመጨረሻ ጉብኝት" },
+  totalVisits: { en: "Total visits", am: "ጠቅላላ ጉብኝቶች" },
+  viewHistory: { en: "View history", am: "ታሪክ ይመልከቱ" },
+  hideHistory: { en: "Hide history", am: "ታሪክ ደብቅ" },
+  noEmail: { en: "No email", am: "ኢሜይል የለም" },
 };
 
 type I18nCtx = {

@@ -8,6 +8,7 @@ import {
   useUpdateAppointmentStatus,
   useDeleteAppointment,
   useGetAdminStats,
+  useListPatients,
   getListAdminAppointmentsQueryKey,
   getGetAdminStatsQueryKey,
   getGetCurrentAdminQueryKey,
@@ -52,13 +53,17 @@ import {
 import {
   CalendarCheck2,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Loader2,
   LogOut,
+  Mail,
   MoreHorizontal,
   Search,
   ShieldCheck,
   Trash2,
+  User,
   X,
   XCircle,
 } from "lucide-react";
@@ -182,6 +187,7 @@ function LoginScreen() {
 
 function Dashboard({ displayName }: { displayName: string }) {
   const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState<"appointments" | "patients">("appointments");
   const [staffFilter, setStaffFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -236,6 +242,7 @@ function Dashboard({ displayName }: { displayName: string }) {
     fullName: string;
     address: string;
     phoneNumber: string;
+    email?: string | null;
     reason: string;
     requestedStaff: string;
     appointmentDate: string;
@@ -331,7 +338,39 @@ function Dashboard({ displayName }: { displayName: string }) {
           />
         </section>
 
-        <Card>
+        {/* Tab switcher */}
+        <div className="flex gap-1 border-b">
+          <button
+            onClick={() => setActiveTab("appointments")}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === "appointments"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <CalendarCheck2 className="w-4 h-4" />
+              {t("appointmentsTab")}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab("patients")}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === "patients"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <User className="w-4 h-4" />
+              {t("patientsTab")}
+            </span>
+          </button>
+        </div>
+
+        {activeTab === "patients" && <PatientsPanel />}
+
+        {activeTab === "appointments" && <Card>
           <CardHeader className="pb-3 space-y-3">
             <div className="flex flex-wrap gap-3 items-end justify-between">
               <div>
@@ -500,8 +539,14 @@ function Dashboard({ displayName }: { displayName: string }) {
                             {a.reason}
                           </span>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {a.phoneNumber}
+                        <TableCell className="text-xs">
+                          <div className="font-mono">{a.phoneNumber}</div>
+                          {a.email && (
+                            <div className="text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <Mail className="w-3 h-3" />
+                              {a.email}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={a.status} />
@@ -528,7 +573,7 @@ function Dashboard({ displayName }: { displayName: string }) {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card>}
       </main>
 
       <AlertDialog
@@ -554,6 +599,106 @@ function Dashboard({ displayName }: { displayName: string }) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function PatientsPanel() {
+  const { t } = useI18n();
+  const { data: patients, isLoading } = useListPatients();
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="p-10 grid place-items-center">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!patients || patients.length === 0) {
+    return (
+      <div className="p-12 text-center text-sm text-muted-foreground">
+        {t("noPatients")}
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">{t("patients")}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t("patientsDesc")}</p>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="divide-y">
+          {patients.map((p) => (
+            <div key={p.phoneNumber}>
+              <div className="px-4 py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 grid place-items-center shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm truncate">{p.fullName}</div>
+                    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                      <span className="font-mono">{p.phoneNumber}</span>
+                      {p.email ? (
+                        <span className="flex items-center gap-1">
+                          <Mail className="w-3 h-3" />{p.email}
+                        </span>
+                      ) : (
+                        <span className="italic">{t("noEmail")}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs text-muted-foreground">{t("totalVisits")}</div>
+                    <div className="font-semibold text-sm">{p.appointmentCount}</div>
+                  </div>
+                  {p.lastAppointment && (
+                    <div className="text-right hidden md:block">
+                      <div className="text-xs text-muted-foreground">{t("lastVisit")}</div>
+                      <div className="text-sm">{formatDate(p.lastAppointment)}</div>
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpanded(expanded === p.phoneNumber ? null : p.phoneNumber)}
+                    className="gap-1"
+                  >
+                    {expanded === p.phoneNumber ? (
+                      <><ChevronUp className="w-4 h-4" />{t("hideHistory")}</>
+                    ) : (
+                      <><ChevronDown className="w-4 h-4" />{t("viewHistory")}</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              {expanded === p.phoneNumber && (
+                <div className="bg-muted/40 border-t px-4 py-3 space-y-2">
+                  {p.appointments.map((a) => (
+                    <div key={a.id} className="flex items-start gap-3 text-sm p-2 rounded-lg bg-background border">
+                      <div className="text-muted-foreground whitespace-nowrap text-xs mt-0.5">
+                        <div>{formatDate(a.appointmentDate)}</div>
+                        <div>{formatTime(a.appointmentDate)}</div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-xs">{a.requestedStaff}</div>
+                        <div className="text-muted-foreground text-xs line-clamp-1">{a.reason}</div>
+                      </div>
+                      <StatusBadge status={a.status as AppointmentStatus} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

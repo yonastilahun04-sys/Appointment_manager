@@ -12,6 +12,8 @@ export interface Appointment {
   fullName: string;
   address: string;
   phoneNumber: string;
+  /** @nullable */
+  email?: string | null;
   reason: string;
   requestedStaff: string;
   appointmentDate: Date;

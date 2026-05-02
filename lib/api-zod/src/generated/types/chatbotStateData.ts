@@ -14,6 +14,8 @@ export type ChatbotStateData = {
   /** @nullable */
   phoneNumber?: string | null;
   /** @nullable */
+  email?: string | null;
+  /** @nullable */
   reason?: string | null;
   /** @nullable */
   requestedStaff?: string | null;

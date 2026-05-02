@@ -31,6 +31,7 @@ export const ChatbotMessageBody = zod.object({
         "ask_name",
         "ask_address",
         "ask_phone",
+        "ask_email",
         "ask_reason",
         "ask_staff",
         "ask_datetime",
@@ -41,6 +42,7 @@ export const ChatbotMessageBody = zod.object({
         fullName: zod.string().nullish(),
         address: zod.string().nullish(),
         phoneNumber: zod.string().nullish(),
+        email: zod.string().nullish(),
         reason: zod.string().nullish(),
         requestedStaff: zod.string().nullish(),
         appointmentDate: zod.coerce.date().nullish(),
@@ -62,6 +64,7 @@ export const ChatbotMessageResponse = zod.object({
         "ask_name",
         "ask_address",
         "ask_phone",
+        "ask_email",
         "ask_reason",
         "ask_staff",
         "ask_datetime",
@@ -72,6 +75,7 @@ export const ChatbotMessageResponse = zod.object({
         fullName: zod.string().nullish(),
         address: zod.string().nullish(),
         phoneNumber: zod.string().nullish(),
+        email: zod.string().nullish(),
         reason: zod.string().nullish(),
         requestedStaff: zod.string().nullish(),
         appointmentDate: zod.coerce.date().nullish(),
@@ -88,6 +92,7 @@ export const ChatbotMessageResponse = zod.object({
       fullName: zod.string(),
       address: zod.string(),
       phoneNumber: zod.string(),
+      email: zod.string().nullish(),
       reason: zod.string(),
       requestedStaff: zod.string(),
       appointmentDate: zod.coerce.date(),
@@ -176,6 +181,7 @@ export const ListAdminAppointmentsResponseItem = zod.object({
   fullName: zod.string(),
   address: zod.string(),
   phoneNumber: zod.string(),
+  email: zod.string().nullish(),
   reason: zod.string(),
   requestedStaff: zod.string(),
   appointmentDate: zod.coerce.date(),
@@ -203,6 +209,7 @@ export const UpdateAppointmentStatusResponse = zod.object({
   fullName: zod.string(),
   address: zod.string(),
   phoneNumber: zod.string(),
+  email: zod.string().nullish(),
   reason: zod.string(),
   requestedStaff: zod.string(),
   appointmentDate: zod.coerce.date(),
@@ -233,3 +240,30 @@ export const GetAdminStatsResponse = zod.object({
   cancelled: zod.number(),
   upcoming: zod.number(),
 });
+
+/**
+ * @summary List all unique patients with their appointment history
+ */
+export const ListPatientsResponseItem = zod.object({
+  phoneNumber: zod.string(),
+  fullName: zod.string(),
+  email: zod.string().nullish(),
+  appointmentCount: zod.number(),
+  lastAppointment: zod.coerce.date().nullish(),
+  appointments: zod.array(
+    zod.object({
+      id: zod.string(),
+      fullName: zod.string(),
+      address: zod.string(),
+      phoneNumber: zod.string(),
+      email: zod.string().nullish(),
+      reason: zod.string(),
+      requestedStaff: zod.string(),
+      appointmentDate: zod.coerce.date(),
+      status: zod.enum(["pending", "confirmed", "completed", "cancelled"]),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+export const ListPatientsResponse = zod.array(ListPatientsResponseItem);

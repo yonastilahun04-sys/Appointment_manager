@@ -14,6 +14,7 @@ export const ChatbotStateStep = {
   ask_name: "ask_name",
   ask_address: "ask_address",
   ask_phone: "ask_phone",
+  ask_email: "ask_email",
   ask_reason: "ask_reason",
   ask_staff: "ask_staff",
   ask_datetime: "ask_datetime",

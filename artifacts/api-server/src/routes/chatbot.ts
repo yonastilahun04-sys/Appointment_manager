@@ -8,7 +8,8 @@ router.post("/chatbot/message", async (req, res) => {
   const body = ChatbotMessageBody.parse(req.body);
   const result = await handleChatbotTurn(
     body.message,
-    body.state,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    body.state as any,
     body.lang ?? "en",
   );
   res.json(result);

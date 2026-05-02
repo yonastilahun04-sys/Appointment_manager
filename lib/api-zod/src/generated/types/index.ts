@@ -26,5 +26,6 @@ export * from "./listAdminAppointmentsParams";
 export * from "./loginRequest";
 export * from "./loginResponse";
 export * from "./okResponse";
+export * from "./patient";
 export * from "./sessionResponse";
 export * from "./statusUpdateRequest";
