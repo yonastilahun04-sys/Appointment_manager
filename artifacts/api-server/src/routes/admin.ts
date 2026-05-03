@@ -63,7 +63,7 @@ router.delete("/admin/appointments/:id", requireAdmin, async (req: Request, res:
   res.json({ ok: true });
 });
 
-router.get("/admin/stats", requireAdmin, async (_req, res) => {
+router.get("/admin/stats", requireAdmin, async (_req: Request, res: Response) => {
   const rows = await db.select().from(appointmentsTable);
   const now = Date.now();
   const stats = {
@@ -86,7 +86,7 @@ router.get("/admin/stats", requireAdmin, async (_req, res) => {
   res.json(stats);
 });
 
-router.get("/admin/patients", requireAdmin, async (_req, res) => {
+router.get("/admin/patients", requireAdmin, async (_req: Request, res: Response) => {
   const rows = await db
     .select()
     .from(appointmentsTable)
@@ -127,7 +127,7 @@ router.get("/admin/patients", requireAdmin, async (_req, res) => {
   res.json(patients);
 });
 
-router.get("/admin/files", requireAdmin, async (_req, res) => {
+router.get("/admin/files", requireAdmin, async (_req: Request, res: Response) => {
   const rows = await db
     .select()
     .from(uploadsTable)
@@ -175,7 +175,7 @@ router.post("/admin/files", requireAdmin, async (req: Request, res: Response) =>
   });
 });
 
-router.delete("/admin/files/:id", requireAdmin, async (req, res) => {
+router.delete("/admin/files/:id", requireAdmin, async (req: Request, res: Response) => {
   const id = String(req.params.id);
   const [deleted] = await db
     .delete(uploadsTable)
