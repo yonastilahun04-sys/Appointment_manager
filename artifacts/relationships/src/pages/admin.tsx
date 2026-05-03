@@ -55,7 +55,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   CalendarCheck2,
   CheckCircle2,
@@ -739,7 +738,7 @@ function FilesPanel() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [previewFile, setPreviewFile] = useState<{
+  const [selectedFile, setSelectedFile] = useState<{
     fileName: string;
     mimeType: string;
     objectPath: string;
@@ -821,7 +820,7 @@ function FilesPanel() {
 
   function openFile(file: { fileName: string; mimeType: string; objectPath: string }) {
     if (isPreviewable(file.mimeType)) {
-      setPreviewFile(file);
+      setSelectedFile(file);
       return;
     }
     window.open(getViewPath(file.objectPath), "_blank", "noopener,noreferrer");
@@ -898,90 +897,114 @@ function FilesPanel() {
               {t("noFiles")}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("fileName")}</TableHead>
-                    <TableHead>{t("type")}</TableHead>
-                    <TableHead>{t("fileSize")}</TableHead>
-                    <TableHead>{t("uploadedAt")}</TableHead>
-                    <TableHead className="text-right">{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {files.map((f) => (
-                    <TableRow key={f.id}>
-                      <TableCell className="font-medium max-w-xs">
-                        <button
-                          type="button"
-                          onClick={() => openFile(f)}
-                          className="truncate block text-left text-indigo-600 hover:underline"
-                        >
-                          {f.fileName}
-                        </button>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {f.mimeType}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {formatBytes(f.fileSize)}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {formatDate(f.uploadedAt)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1"
-                            asChild
-                          >
-                            <span>{t("download")}</span>
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setPendingDeleteId(f.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] p-4">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("fileName")}</TableHead>
+                      <TableHead>{t("type")}</TableHead>
+                      <TableHead>{t("fileSize")}</TableHead>
+                      <TableHead>{t("uploadedAt")}</TableHead>
+                      <TableHead className="text-right">{t("actions")}</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {files.map((f) => (
+                      <TableRow key={f.id}>
+                        <TableCell className="font-medium max-w-xs">
+                          <button
+                            type="button"
+                            onClick={() => openFile(f)}
+                            className="truncate block text-left text-indigo-600 hover:underline"
+                          >
+                            {f.fileName}
+                          </button>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {f.mimeType}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {formatBytes(f.fileSize)}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {formatDate(f.uploadedAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1"
+                              onClick={() => openFile(f)}
+                            >
+                              {t("view")}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1"
+                              asChild
+                            >
+                              <a
+                                href={getDownloadPath(f.objectPath)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                {t("download")}
+                              </a>
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setPendingDeleteId(f.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <Card className="border-dashed">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">{t("filePreview")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedFile ? (
+                    selectedFile.mimeType.startsWith("image/") ? (
+                      <img
+                        src={getViewPath(selectedFile.objectPath)}
+                        alt={selectedFile.fileName}
+                        className="w-full max-h-[70vh] object-contain rounded-md border"
+                      />
+                    ) : selectedFile.mimeType === "application/pdf" ? (
+                      <iframe
+                        src={getViewPath(selectedFile.objectPath)}
+                        title={selectedFile.fileName}
+                        className="w-full h-[70vh] rounded-md border"
+                      />
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        {t("previewUnavailable")}
+                      </div>
+                    )
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      {t("selectFileToPreview")}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
         </CardContent>
       </Card>
-
-      <Dialog
-        open={previewFile !== null}
-        onOpenChange={(open) => !open && setPreviewFile(null)}
-      >
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{previewFile?.fileName}</DialogTitle>
-          </DialogHeader>
-          {previewFile?.mimeType.startsWith("image/") ? (
-            <img
-              src={getViewPath(previewFile.objectPath)}
-              alt={previewFile.fileName}
-              className="max-h-[70vh] w-full object-contain rounded-md"
-            />
-          ) : previewFile?.mimeType === "application/pdf" ? (
-            <iframe
-              src={getViewPath(previewFile.objectPath)}
-              title={previewFile.fileName}
-              className="w-full h-[70vh] rounded-md border"
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog
         open={pendingDeleteId !== null}

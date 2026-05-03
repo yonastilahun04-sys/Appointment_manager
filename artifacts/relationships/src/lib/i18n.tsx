@@ -143,6 +143,10 @@ export const dict: Dict = {
   uploadError: { en: "Upload failed. Please try again.", am: "መጫን አልተሳካም። እባክዎ እንደገና ይሞክሩ።" },
   chooseFile: { en: "Choose a file", am: "ፋይል ይምረጡ" },
   orDragDrop: { en: "or drag and drop here", am: "ወይም እዚህ ይጎትቱ" },
+  view: { en: "View", am: "አሳይ" },
+  filePreview: { en: "File preview", am: "የፋይል ቅድመ እይታ" },
+  selectFileToPreview: { en: "Select a file to preview it here.", am: "እዚህ ለማሳየት ፋይል ይምረጡ።" },
+  previewUnavailable: { en: "Preview not available for this file type.", am: "ለዚህ የፋይል አይነት ቅድመ እይታ አይገኝም።" },
   type: { en: "Type", am: "አይነት" },
 };
 
