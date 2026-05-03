@@ -5,7 +5,7 @@ import { CheckAvailabilityQueryParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-router.get("/appointments/check-availability", async (req, res) => {
+router.get("/appointments/check-availability", async (req: any, res: any) => {
   const params = CheckAvailabilityQueryParams.parse(req.query);
   const date = params.appointmentDate;
   const conflict = await db
