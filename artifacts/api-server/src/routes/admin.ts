@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, appointmentsTable, uploadsTable } from "@workspace/db";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import {
@@ -11,7 +11,7 @@ import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
 
-router.get("/admin/appointments", requireAdmin, async (req: any, res: any) => {
+router.get("/admin/appointments", requireAdmin, async (req: Request, res: Response) => {
   const q = ListAdminAppointmentsQueryParams.parse(req.query);
   const conditions = [];
   if (q.staff) conditions.push(eq(appointmentsTable.requestedStaff, q.staff));
@@ -35,7 +35,7 @@ router.get("/admin/appointments", requireAdmin, async (req: any, res: any) => {
   res.json(rows.map(serializeAppointment));
 });
 
-router.put("/admin/appointments/:id/status", requireAdmin, async (req: any, res: any) => {
+router.put("/admin/appointments/:id/status", requireAdmin, async (req: Request, res: Response) => {
   const body = UpdateAppointmentStatusBody.parse(req.body);
   const id = String(req.params.id);
   const [updated] = await db
@@ -50,7 +50,7 @@ router.put("/admin/appointments/:id/status", requireAdmin, async (req: any, res:
   res.json(serializeAppointment(updated));
 });
 
-router.delete("/admin/appointments/:id", requireAdmin, async (req: any, res: any) => {
+router.delete("/admin/appointments/:id", requireAdmin, async (req: Request, res: Response) => {
   const id = String(req.params.id);
   const [deleted] = await db
     .delete(appointmentsTable)
@@ -144,7 +144,7 @@ router.get("/admin/files", requireAdmin, async (_req, res) => {
   );
 });
 
-router.post("/admin/files", requireAdmin, async (req: any, res: any) => {
+router.post("/admin/files", requireAdmin, async (req: Request, res: Response) => {
   const { fileName, objectPath, fileSize, mimeType } = req.body as {
     fileName: string;
     objectPath: string;

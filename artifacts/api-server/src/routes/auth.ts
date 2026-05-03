@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { AdminLoginBody } from "@workspace/api-zod";
 import {
   authenticate,
@@ -10,7 +10,7 @@ import {
 
 const router: IRouter = Router();
 
-router.post("/auth/login", async (req: any, res: any) => {
+router.post("/auth/login", async (req: Request, res: Response) => {
   const body = AdminLoginBody.parse(req.body);
   const user = await authenticate(body.username, body.password);
   if (!user) {
@@ -22,12 +22,12 @@ router.post("/auth/login", async (req: any, res: any) => {
   res.json({ user });
 });
 
-router.get("/auth/me", (req: any, res: any) => {
+router.get("/auth/me", (req: Request, res: Response) => {
   const user = readUserFromRequest(req);
   res.json({ user: user ?? null });
 });
 
-router.post("/auth/logout", (_req: any, res: any) => {
+router.post("/auth/logout", (_req: Request, res: Response) => {
   clearAuthCookie(res);
   res.json({ ok: true });
 });

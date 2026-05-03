@@ -1,11 +1,11 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, appointmentsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { CheckAvailabilityQueryParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-router.get("/appointments/check-availability", async (req: any, res: any) => {
+router.get("/appointments/check-availability", async (req: Request, res: Response) => {
   const params = CheckAvailabilityQueryParams.parse(req.query);
   const date = params.appointmentDate;
   const conflict = await db
