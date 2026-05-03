@@ -55,6 +55,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   CalendarCheck2,
   CheckCircle2,
@@ -738,6 +739,11 @@ function FilesPanel() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [previewFile, setPreviewFile] = useState<{
+    fileName: string;
+    mimeType: string;
+    objectPath: string;
+  } | null>(null);
 
   function refetchFiles() {
     queryClient.invalidateQueries({ queryKey: getListAdminFilesQueryKey() });
@@ -803,6 +809,22 @@ function FilesPanel() {
   function getDownloadPath(objectPath: string): string {
     const stripped = objectPath.replace(/^\/objects\//, "");
     return `/storage/objects/${stripped}`;
+  }
+
+  function getViewPath(objectPath: string): string {
+    return getDownloadPath(objectPath);
+  }
+
+  function isPreviewable(mimeType: string): boolean {
+    return mimeType.startsWith("image/") || mimeType === "application/pdf";
+  }
+
+  function openFile(file: { fileName: string; mimeType: string; objectPath: string }) {
+    if (isPreviewable(file.mimeType)) {
+      setPreviewFile(file);
+      return;
+    }
+    window.open(getViewPath(file.objectPath), "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -891,7 +913,13 @@ function FilesPanel() {
                   {files.map((f) => (
                     <TableRow key={f.id}>
                       <TableCell className="font-medium max-w-xs">
-                        <span className="truncate block">{f.fileName}</span>
+                        <button
+                          type="button"
+                          onClick={() => openFile(f)}
+                          className="truncate block text-left text-indigo-600 hover:underline"
+                        >
+                          {f.fileName}
+                        </button>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {f.mimeType}
@@ -910,15 +938,7 @@ function FilesPanel() {
                             className="gap-1"
                             asChild
                           >
-                            <a
-                              href={getDownloadPath(f.objectPath)}
-                              download={f.fileName}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              {t("download")}
-                            </a>
+                            <span>{t("download")}</span>
                           </Button>
                           <Button
                             size="icon"
@@ -938,6 +958,30 @@ function FilesPanel() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={previewFile !== null}
+        onOpenChange={(open) => !open && setPreviewFile(null)}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{previewFile?.fileName}</DialogTitle>
+          </DialogHeader>
+          {previewFile?.mimeType.startsWith("image/") ? (
+            <img
+              src={getViewPath(previewFile.objectPath)}
+              alt={previewFile.fileName}
+              className="max-h-[70vh] w-full object-contain rounded-md"
+            />
+          ) : previewFile?.mimeType === "application/pdf" ? (
+            <iframe
+              src={getViewPath(previewFile.objectPath)}
+              title={previewFile.fileName}
+              className="w-full h-[70vh] rounded-md border"
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={pendingDeleteId !== null}
