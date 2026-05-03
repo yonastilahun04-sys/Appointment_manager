@@ -23,6 +23,7 @@ import type {
   ChatbotRequest,
   ChatbotResponse,
   CheckAvailabilityParams,
+  DeleteAdminFile200,
   ErrorResponse,
   HealthStatus,
   ListAdminAppointmentsParams,
@@ -30,8 +31,12 @@ import type {
   LoginResponse,
   OkResponse,
   Patient,
+  RegisterUploadedFileBody,
+  RequestUploadUrlBody,
+  RequestUploadUrlResponse,
   SessionResponse,
   StatusUpdateRequest,
+  UploadedFile,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -42,6 +47,338 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+export const getRequestUploadUrlUrl = () => {
+  return `/api/storage/uploads/request-url`;
+};
+
+export const requestUploadUrl = async (
+  requestUploadUrlBody: RequestUploadUrlBody,
+  options?: RequestInit,
+): Promise<RequestUploadUrlResponse> => {
+  return customFetch<RequestUploadUrlResponse>(getRequestUploadUrlUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(requestUploadUrlBody),
+  });
+};
+
+export const getRequestUploadUrlMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    TError,
+    { data: BodyType<RequestUploadUrlBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestUploadUrl>>,
+  TError,
+  { data: BodyType<RequestUploadUrlBody> },
+  TContext
+> => {
+  const mutationKey = ["requestUploadUrl"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    { data: BodyType<RequestUploadUrlBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return requestUploadUrl(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestUploadUrlMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestUploadUrl>>
+>;
+export type RequestUploadUrlMutationBody = BodyType<RequestUploadUrlBody>;
+export type RequestUploadUrlMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+export const useRequestUploadUrl = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    TError,
+    { data: BodyType<RequestUploadUrlBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestUploadUrl>>,
+  TError,
+  { data: BodyType<RequestUploadUrlBody> },
+  TContext
+> => {
+  return useMutation(getRequestUploadUrlMutationOptions(options));
+};
+
+/**
+ * @summary List all uploaded files
+ */
+export const getListAdminFilesUrl = () => {
+  return `/api/admin/files`;
+};
+
+export const listAdminFiles = async (
+  options?: RequestInit,
+): Promise<UploadedFile[]> => {
+  return customFetch<UploadedFile[]>(getListAdminFilesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAdminFilesQueryKey = () => {
+  return [`/api/admin/files`] as const;
+};
+
+export const getListAdminFilesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAdminFiles>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminFiles>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAdminFilesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminFiles>>> = ({
+    signal,
+  }) => listAdminFiles({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminFiles>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAdminFilesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAdminFiles>>
+>;
+export type ListAdminFilesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all uploaded files
+ */
+
+export function useListAdminFiles<
+  TData = Awaited<ReturnType<typeof listAdminFiles>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminFiles>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAdminFilesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register a completed file upload in the database
+ */
+export const getRegisterUploadedFileUrl = () => {
+  return `/api/admin/files`;
+};
+
+export const registerUploadedFile = async (
+  registerUploadedFileBody: RegisterUploadedFileBody,
+  options?: RequestInit,
+): Promise<UploadedFile> => {
+  return customFetch<UploadedFile>(getRegisterUploadedFileUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(registerUploadedFileBody),
+  });
+};
+
+export const getRegisterUploadedFileMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerUploadedFile>>,
+    TError,
+    { data: BodyType<RegisterUploadedFileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerUploadedFile>>,
+  TError,
+  { data: BodyType<RegisterUploadedFileBody> },
+  TContext
+> => {
+  const mutationKey = ["registerUploadedFile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerUploadedFile>>,
+    { data: BodyType<RegisterUploadedFileBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerUploadedFile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterUploadedFileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerUploadedFile>>
+>;
+export type RegisterUploadedFileMutationBody =
+  BodyType<RegisterUploadedFileBody>;
+export type RegisterUploadedFileMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Register a completed file upload in the database
+ */
+export const useRegisterUploadedFile = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerUploadedFile>>,
+    TError,
+    { data: BodyType<RegisterUploadedFileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerUploadedFile>>,
+  TError,
+  { data: BodyType<RegisterUploadedFileBody> },
+  TContext
+> => {
+  return useMutation(getRegisterUploadedFileMutationOptions(options));
+};
+
+/**
+ * @summary Delete an uploaded file
+ */
+export const getDeleteAdminFileUrl = (id: string) => {
+  return `/api/admin/files/${id}`;
+};
+
+export const deleteAdminFile = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DeleteAdminFile200> => {
+  return customFetch<DeleteAdminFile200>(getDeleteAdminFileUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAdminFileMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAdminFile>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAdminFile>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteAdminFile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAdminFile>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAdminFile(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAdminFileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAdminFile>>
+>;
+
+export type DeleteAdminFileMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete an uploaded file
+ */
+export const useDeleteAdminFile = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAdminFile>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAdminFile>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteAdminFileMutationOptions(options));
+};
 
 /**
  * @summary Health check

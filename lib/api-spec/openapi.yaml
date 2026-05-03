@@ -12,8 +12,86 @@ tags:
   - name: appointments
   - name: auth
   - name: admin
+  - name: storage
 
 paths:
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestUploadUrlBody"
+      responses:
+        "200":
+          description: Presigned upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestUploadUrlResponse"
+
+  /admin/files:
+    get:
+      operationId: listAdminFiles
+      tags: [admin]
+      summary: List all uploaded files
+      responses:
+        "200":
+          description: List of uploaded files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UploadedFile"
+    post:
+      operationId: registerUploadedFile
+      tags: [admin]
+      summary: Register a completed file upload in the database
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileName, objectPath, fileSize, mimeType]
+              properties:
+                fileName: { type: string }
+                objectPath: { type: string }
+                fileSize: { type: integer }
+                mimeType: { type: string }
+      responses:
+        "201":
+          description: File registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadedFile"
+
+  /admin/files/{id}:
+    delete:
+      operationId: deleteAdminFile
+      tags: [admin]
+      summary: Delete an uploaded file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
   /healthz:
     get:
       operationId: healthCheck
@@ -444,3 +522,35 @@ components:
         completed: { type: integer }
         cancelled: { type: integer }
         upcoming: { type: integer }
+
+    RequestUploadUrlBody:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string }
+        size: { type: integer }
+        contentType: { type: string }
+
+    RequestUploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string }
+        objectPath: { type: string }
+        metadata:
+          type: object
+          properties:
+            name: { type: string }
+            size: { type: integer }
+            contentType: { type: string }
+
+    UploadedFile:
+      type: object
+      required: [id, fileName, objectPath, fileSize, mimeType, uploadedAt]
+      properties:
+        id: { type: string }
+        fileName: { type: string }
+        objectPath: { type: string }
+        fileSize: { type: integer }
+        mimeType: { type: string }
+        uploadedAt: { type: string, format: date-time }

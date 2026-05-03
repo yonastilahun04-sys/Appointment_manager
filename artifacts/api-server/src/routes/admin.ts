@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, appointmentsTable } from "@workspace/db";
+import { db, appointmentsTable, uploadsTable } from "@workspace/db";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import {
   ListAdminAppointmentsQueryParams,
@@ -7,6 +7,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAdmin } from "../lib/auth";
 import { serializeAppointment } from "../lib/chatbot";
+import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
 
@@ -124,6 +125,67 @@ router.get("/admin/patients", requireAdmin, async (_req, res) => {
   }));
 
   res.json(patients);
+});
+
+router.get("/admin/files", requireAdmin, async (_req, res) => {
+  const rows = await db
+    .select()
+    .from(uploadsTable)
+    .orderBy(sql`${uploadsTable.uploadedAt} desc`);
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      fileName: r.fileName,
+      objectPath: r.objectPath,
+      fileSize: r.fileSize,
+      mimeType: r.mimeType,
+      uploadedAt: r.uploadedAt.toISOString(),
+    })),
+  );
+});
+
+router.post("/admin/files", requireAdmin, async (req, res) => {
+  const { fileName, objectPath, fileSize, mimeType } = req.body as {
+    fileName: string;
+    objectPath: string;
+    fileSize: number;
+    mimeType: string;
+  };
+  if (!fileName || !objectPath || fileSize == null || !mimeType) {
+    res.status(400).json({ error: "Missing required fields" });
+    return;
+  }
+  const [row] = await db
+    .insert(uploadsTable)
+    .values({
+      id: randomUUID(),
+      fileName,
+      objectPath,
+      fileSize,
+      mimeType,
+    })
+    .returning();
+  res.status(201).json({
+    id: row.id,
+    fileName: row.fileName,
+    objectPath: row.objectPath,
+    fileSize: row.fileSize,
+    mimeType: row.mimeType,
+    uploadedAt: row.uploadedAt.toISOString(),
+  });
+});
+
+router.delete("/admin/files/:id", requireAdmin, async (req, res) => {
+  const id = String(req.params.id);
+  const [deleted] = await db
+    .delete(uploadsTable)
+    .where(eq(uploadsTable.id, id))
+    .returning();
+  if (!deleted) {
+    res.status(404).json({ error: "File not found" });
+    return;
+  }
+  res.json({ ok: true });
 });
 
 export default router;

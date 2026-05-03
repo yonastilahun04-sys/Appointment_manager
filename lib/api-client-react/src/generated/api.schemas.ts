@@ -185,6 +185,44 @@ export interface AdminStats {
   upcoming: number;
 }
 
+export interface RequestUploadUrlBody {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export type RequestUploadUrlResponseMetadata = {
+  name?: string;
+  size?: number;
+  contentType?: string;
+};
+
+export interface RequestUploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: RequestUploadUrlResponseMetadata;
+}
+
+export interface UploadedFile {
+  id: string;
+  fileName: string;
+  objectPath: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+}
+
+export type RegisterUploadedFileBody = {
+  fileName: string;
+  objectPath: string;
+  fileSize: number;
+  mimeType: string;
+};
+
+export type DeleteAdminFile200 = {
+  ok?: boolean;
+};
+
 export type CheckAvailabilityParams = {
   requestedStaff: string;
   appointmentDate: string;

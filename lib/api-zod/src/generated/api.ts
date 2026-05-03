@@ -8,6 +8,61 @@
 import * as zod from "zod";
 
 /**
+ * @summary Request a presigned URL for file upload
+ */
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string(),
+  size: zod.number(),
+  contentType: zod.string(),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string(),
+  objectPath: zod.string(),
+  metadata: zod
+    .object({
+      name: zod.string().optional(),
+      size: zod.number().optional(),
+      contentType: zod.string().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary List all uploaded files
+ */
+export const ListAdminFilesResponseItem = zod.object({
+  id: zod.string(),
+  fileName: zod.string(),
+  objectPath: zod.string(),
+  fileSize: zod.number(),
+  mimeType: zod.string(),
+  uploadedAt: zod.coerce.date(),
+});
+export const ListAdminFilesResponse = zod.array(ListAdminFilesResponseItem);
+
+/**
+ * @summary Register a completed file upload in the database
+ */
+export const RegisterUploadedFileBody = zod.object({
+  fileName: zod.string(),
+  objectPath: zod.string(),
+  fileSize: zod.number(),
+  mimeType: zod.string(),
+});
+
+/**
+ * @summary Delete an uploaded file
+ */
+export const DeleteAdminFileParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const DeleteAdminFileResponse = zod.object({
+  ok: zod.boolean().optional(),
+});
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({

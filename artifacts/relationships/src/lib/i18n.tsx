@@ -126,6 +126,24 @@ export const dict: Dict = {
   viewHistory: { en: "View history", am: "ታሪክ ይመልከቱ" },
   hideHistory: { en: "Hide history", am: "ታሪክ ደብቅ" },
   noEmail: { en: "No email", am: "ኢሜይል የለም" },
+
+  // Files tab
+  filesTab: { en: "Files", am: "ፋይሎች" },
+  filesDesc: { en: "Upload and manage files for the clinic", am: "ለክሊኒኩ ፋይሎችን ይጫኑ እና ያስተዳድሩ" },
+  uploadFile: { en: "Upload file", am: "ፋይል ጫን" },
+  uploading: { en: "Uploading...", am: "በመጫን ላይ..." },
+  noFiles: { en: "No files uploaded yet.", am: "ምንም ፋይል አልተጫነም።" },
+  fileName: { en: "File name", am: "የፋይል ስም" },
+  fileSize: { en: "Size", am: "መጠን" },
+  uploadedAt: { en: "Uploaded", am: "የተጫነው" },
+  download: { en: "Download", am: "አውርድ" },
+  deleteFile: { en: "Delete file", am: "ፋይሉን ሰርዝ" },
+  deleteFileConfirm: { en: "Delete this file?", am: "ይህን ፋይል ይሰርዙ?" },
+  deleteFileDesc: { en: "This permanently removes the file. This cannot be undone.", am: "ፋይሉን በቋሚነት ያስወግዳል። ተመልሶ መመለስ አይቻልም።" },
+  uploadError: { en: "Upload failed. Please try again.", am: "መጫን አልተሳካም። እባክዎ እንደገና ይሞክሩ።" },
+  chooseFile: { en: "Choose a file", am: "ፋይል ይምረጡ" },
+  orDragDrop: { en: "or drag and drop here", am: "ወይም እዚህ ይጎትቱ" },
+  type: { en: "Type", am: "አይነት" },
 };
 
 type I18nCtx = {

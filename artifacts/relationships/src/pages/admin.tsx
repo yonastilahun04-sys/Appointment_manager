@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "wouter";
 import {
   useGetCurrentAdmin,
@@ -9,9 +9,14 @@ import {
   useDeleteAppointment,
   useGetAdminStats,
   useListPatients,
+  useListAdminFiles,
+  useRegisterUploadedFile,
+  useDeleteAdminFile,
+  useRequestUploadUrl,
   getListAdminAppointmentsQueryKey,
   getGetAdminStatsQueryKey,
   getGetCurrentAdminQueryKey,
+  getListAdminFilesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -56,6 +61,9 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Download,
+  FileUp,
+  FolderOpen,
   Loader2,
   LogOut,
   Mail,
@@ -63,6 +71,7 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  Upload,
   User,
   X,
   XCircle,
@@ -187,7 +196,7 @@ function LoginScreen() {
 
 function Dashboard({ displayName }: { displayName: string }) {
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<"appointments" | "patients">("appointments");
+  const [activeTab, setActiveTab] = useState<"appointments" | "patients" | "files">("appointments");
   const [staffFilter, setStaffFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -366,9 +375,23 @@ function Dashboard({ displayName }: { displayName: string }) {
               {t("patientsTab")}
             </span>
           </button>
+          <button
+            onClick={() => setActiveTab("files")}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === "files"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <FolderOpen className="w-4 h-4" />
+              {t("filesTab")}
+            </span>
+          </button>
         </div>
 
         {activeTab === "patients" && <PatientsPanel />}
+        {activeTab === "files" && <FilesPanel />}
 
         {activeTab === "appointments" && <Card>
           <CardHeader className="pb-3 space-y-3">
@@ -699,6 +722,243 @@ function PatientsPanel() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function FilesPanel() {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const { data: files, isLoading } = useListAdminFiles();
+  const requestUrl = useRequestUploadUrl();
+  const registerFile = useRegisterUploadedFile();
+  const deleteFile = useDeleteAdminFile();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  function refetchFiles() {
+    queryClient.invalidateQueries({ queryKey: getListAdminFilesQueryKey() });
+  }
+
+  async function handleUpload(file: File) {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const urlData = await requestUrl.mutateAsync({
+        data: { name: file.name, size: file.size, contentType: file.type },
+      });
+
+      await fetch(urlData.uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      await registerFile.mutateAsync({
+        data: {
+          fileName: file.name,
+          objectPath: urlData.objectPath,
+          fileSize: file.size,
+          mimeType: file.type,
+        },
+      });
+
+      refetchFiles();
+    } catch {
+      setUploadError(t("uploadError"));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleUpload(file);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleUpload(file);
+  }
+
+  function handleDeleteConfirm() {
+    if (!pendingDeleteId) return;
+    const id = pendingDeleteId;
+    setPendingDeleteId(null);
+    deleteFile.mutate({ id }, { onSuccess: refetchFiles });
+  }
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function getDownloadPath(objectPath: string): string {
+    const stripped = objectPath.replace(/^\/objects\//, "");
+    return `/storage/objects/${stripped}`;
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">{t("filesTab")}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t("filesDesc")}</p>
+            </div>
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                disabled={uploading}
+              />
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" />{t("uploading")}</>
+                ) : (
+                  <><Upload className="w-4 h-4" />{t("uploadFile")}</>
+                )}
+              </Button>
+            </div>
+          </div>
+          {uploadError && (
+            <p className="text-sm text-destructive mt-1">{uploadError}</p>
+          )}
+        </CardHeader>
+
+        <CardContent className="p-0">
+          {/* Drop zone */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
+            className={`mx-4 mb-4 border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              isDragOver
+                ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950"
+                : "border-muted-foreground/25 hover:border-muted-foreground/40"
+            }`}
+          >
+            <FileUp className="w-7 h-7 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="text-indigo-600 hover:underline font-medium"
+              >
+                {t("chooseFile")}
+              </button>{" "}
+              {t("orDragDrop")}
+            </p>
+          </div>
+
+          {isLoading ? (
+            <div className="p-10 grid place-items-center">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : !files || files.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              {t("noFiles")}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("fileName")}</TableHead>
+                    <TableHead>{t("type")}</TableHead>
+                    <TableHead>{t("fileSize")}</TableHead>
+                    <TableHead>{t("uploadedAt")}</TableHead>
+                    <TableHead className="text-right">{t("actions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {files.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell className="font-medium max-w-xs">
+                        <span className="truncate block">{f.fileName}</span>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {f.mimeType}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {formatBytes(f.fileSize)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {formatDate(f.uploadedAt)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1"
+                            asChild
+                          >
+                            <a
+                              href={getDownloadPath(f.objectPath)}
+                              download={f.fileName}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              {t("download")}
+                            </a>
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setPendingDeleteId(f.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteFileConfirm")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("deleteFileDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              {t("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
