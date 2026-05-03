@@ -50,7 +50,7 @@ router.put("/admin/appointments/:id/status", requireAdmin, async (req: any, res:
   res.json(serializeAppointment(updated));
 });
 
-router.delete("/admin/appointments/:id", requireAdmin, async (req: Request, res: Response) => {
+router.delete("/admin/appointments/:id", requireAdmin, async (req: any, res: any) => {
   const id = String(req.params.id);
   const [deleted] = await db
     .delete(appointmentsTable)
@@ -63,7 +63,7 @@ router.delete("/admin/appointments/:id", requireAdmin, async (req: Request, res:
   res.json({ ok: true });
 });
 
-router.get("/admin/stats", requireAdmin, async (_req: Request, res: Response) => {
+router.get("/admin/stats", requireAdmin, async (_req: any, res: any) => {
   const rows = await db.select().from(appointmentsTable);
   const now = Date.now();
   const stats = {
@@ -86,7 +86,7 @@ router.get("/admin/stats", requireAdmin, async (_req: Request, res: Response) =>
   res.json(stats);
 });
 
-router.get("/admin/patients", requireAdmin, async (_req: Request, res: Response) => {
+router.get("/admin/patients", requireAdmin, async (_req: any, res: any) => {
   const rows = await db
     .select()
     .from(appointmentsTable)
@@ -127,7 +127,7 @@ router.get("/admin/patients", requireAdmin, async (_req: Request, res: Response)
   res.json(patients);
 });
 
-router.get("/admin/files", requireAdmin, async (_req: Request, res: Response) => {
+router.get("/admin/files", requireAdmin, async (_req: any, res: any) => {
   const rows = await db
     .select()
     .from(uploadsTable)
@@ -175,7 +175,7 @@ router.post("/admin/files", requireAdmin, async (req: any, res: any) => {
   });
 });
 
-router.delete("/admin/files/:id", requireAdmin, async (req: Request, res: Response) => {
+router.delete("/admin/files/:id", requireAdmin, async (req: any, res: any) => {
   const id = String(req.params.id);
   const [deleted] = await db
     .delete(uploadsTable)
