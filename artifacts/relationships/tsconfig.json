@@ -6,6 +6,7 @@
     "noEmit": true,
     "strict": false,
     "noImplicitAny": false,
+    "rootDir": ".",
     "jsx": "preserve",
     "lib": ["esnext", "dom", "dom.iterable"],
     "resolveJsonModule": true,
