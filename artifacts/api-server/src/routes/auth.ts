@@ -10,7 +10,7 @@ import {
 
 const router: IRouter = Router();
 
-router.post("/auth/login", async (req: Request, res: Response) => {
+router.post("/auth/login", async (req: any, res: any) => {
   const body = AdminLoginBody.parse(req.body);
   const user = await authenticate(body.username, body.password);
   if (!user) {
@@ -22,12 +22,12 @@ router.post("/auth/login", async (req: Request, res: Response) => {
   res.json({ user });
 });
 
-router.get("/auth/me", (req: Request, res: Response) => {
+router.get("/auth/me", (req: any, res: any) => {
   const user = readUserFromRequest(req);
   res.json({ user: user ?? null });
 });
 
-router.post("/auth/logout", (_req: Request, res: Response) => {
+router.post("/auth/logout", (_req: any, res: any) => {
   clearAuthCookie(res);
   res.json({ ok: true });
 });
