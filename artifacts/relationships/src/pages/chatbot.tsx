@@ -4,45 +4,8 @@ import { Send, RotateCcw, ShieldCheck, CalendarCheck2 } from "lucide-react";
 import { useChatbotMessage } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { LangToggle, useI18n } from "@/lib/i18n";
 import clinicBg from "@/assets/clinic-bg.png";
-
-const COUNTRY_CODES: Array<{ code: string; flag: string; name: string }> = [
-  { code: "+251", flag: "🇪🇹", name: "Ethiopia" },
-  { code: "+1", flag: "🇺🇸", name: "United States / Canada" },
-  { code: "+44", flag: "🇬🇧", name: "United Kingdom" },
-  { code: "+254", flag: "🇰🇪", name: "Kenya" },
-  { code: "+255", flag: "🇹🇿", name: "Tanzania" },
-  { code: "+256", flag: "🇺🇬", name: "Uganda" },
-  { code: "+250", flag: "🇷🇼", name: "Rwanda" },
-  { code: "+252", flag: "🇸🇴", name: "Somalia" },
-  { code: "+253", flag: "🇩🇯", name: "Djibouti" },
-  { code: "+249", flag: "🇸🇩", name: "Sudan" },
-  { code: "+20", flag: "🇪🇬", name: "Egypt" },
-  { code: "+27", flag: "🇿🇦", name: "South Africa" },
-  { code: "+234", flag: "🇳🇬", name: "Nigeria" },
-  { code: "+233", flag: "🇬🇭", name: "Ghana" },
-  { code: "+971", flag: "🇦🇪", name: "United Arab Emirates" },
-  { code: "+966", flag: "🇸🇦", name: "Saudi Arabia" },
-  { code: "+91", flag: "🇮🇳", name: "India" },
-  { code: "+86", flag: "🇨🇳", name: "China" },
-  { code: "+33", flag: "🇫🇷", name: "France" },
-  { code: "+49", flag: "🇩🇪", name: "Germany" },
-  { code: "+39", flag: "🇮🇹", name: "Italy" },
-  { code: "+34", flag: "🇪🇸", name: "Spain" },
-  { code: "+90", flag: "🇹🇷", name: "Turkey" },
-  { code: "+81", flag: "🇯🇵", name: "Japan" },
-  { code: "+82", flag: "🇰🇷", name: "South Korea" },
-  { code: "+61", flag: "🇦🇺", name: "Australia" },
-  { code: "+55", flag: "🇧🇷", name: "Brazil" },
-];
 
 type Message = {
   id: string;
@@ -71,7 +34,6 @@ export default function ChatbotPage() {
     "text" | "datetime" | "choice" | "none"
   >("text");
   const [completed, setCompleted] = useState(false);
-  const [countryCode, setCountryCode] = useState<string>("+251");
   const { lang, t } = useI18n();
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -184,10 +146,6 @@ export default function ChatbotPage() {
     e.preventDefault();
     if (inputType === "datetime") {
       submitDatetime(input);
-    } else if (state.step === "ask_phone") {
-      const local = input.trim().replace(/^0+/, "");
-      if (!local) return;
-      submitText(`${countryCode} ${local}`);
     } else {
       submitText(input);
     }
@@ -282,27 +240,6 @@ export default function ChatbotPage() {
               onSubmit={handleSubmit}
               className="border-t p-3 flex items-center gap-2 bg-card"
             >
-              {state.step === "ask_phone" && (
-                <Select value={countryCode} onValueChange={setCountryCode}>
-                  <SelectTrigger
-                    className="w-[110px] shrink-0"
-                    data-testid="select-country-code"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {COUNTRY_CODES.map((c) => (
-                      <SelectItem key={c.code + c.name} value={c.code}>
-                        <span className="mr-1">{c.flag}</span>
-                        {c.code}
-                        <span className="ml-2 text-muted-foreground text-xs">
-                          {c.name}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
