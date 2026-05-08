@@ -1,191 +1,158 @@
-import { Router, type IRouter, type Request, type Response } from "express";
-import { db, appointmentsTable, uploadsTable } from "@workspace/db";
-import { and, eq, gte, lt, sql } from "drizzle-orm";
-import {
-  ListAdminAppointmentsQueryParams,
-  UpdateAppointmentStatusBody,
-} from "@workspace/api-zod";
-import { requireAdmin } from "../lib/auth";
-import { serializeAppointment } from "../lib/chatbot";
-import { randomUUID } from "crypto";
+import { Router, Request, Response } from "express";
+import { requireAdmin } from "../middleware/auth";
 
-const router: IRouter = Router();
+const router = Router();
 
-router.get("/admin/appointments", requireAdmin, async (req: any, res: any) => {
-  const q = ListAdminAppointmentsQueryParams.parse(req.query);
-  const conditions = [];
-  if (q.staff) conditions.push(eq(appointmentsTable.requestedStaff, q.staff));
-  if (q.status) conditions.push(eq(appointmentsTable.status, q.status));
-  if (q.date) {
-    const start = new Date(q.date);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    conditions.push(gte(appointmentsTable.appointmentDate, start));
-    conditions.push(lt(appointmentsTable.appointmentDate, end));
-  }
+// Example tables (adjust to your actual imports)
+import { db } from "../db";
+import { appointmentsTable, uploadsTable } from "../db/schema";
 
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const rows = await db
-    .select()
-    .from(appointmentsTable)
-    .where(where)
-    .orderBy(sql`${appointmentsTable.appointmentDate} desc`);
+// Helper (adjust if you already have one)
+function serializeAppointment(a: any) {
+  return a;
+}
 
-  res.json(rows.map(serializeAppointment));
-});
+/**
+ * UPDATE APPOINTMENT STATUS
+ */
+router.put(
+  "/admin/appointments/:id",
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const id = String(req.params.id);
 
-router.put("/admin/appointments/:id/status", requireAdmin, async (req: any, res: any) => {
-  const body = UpdateAppointmentStatusBody.parse(req.body);
-  const id = String(req.params.id);
-  const [updated] = await db
-    .update(appointmentsTable)
-    .set({ status: body.status, updatedAt: new Date() })
-    .where(eq(appointmentsTable.id, id))
-    .returning();
-  if (!updated) {
-    res.status(404).json({ error: "Appointment not found" });
-    return;
-  }
-  res.json(serializeAppointment(updated));
-});
+      const [updated] = await db
+        .update(appointmentsTable)
+        .set(req.body)
+        .where({ id })
+        .returning();
 
-router.delete("/admin/appointments/:id", requireAdmin, async (req: any, res: any) => {
-  const id = String(req.params.id);
-  const [deleted] = await db
-    .delete(appointmentsTable)
-    .where(eq(appointmentsTable.id, id))
-    .returning();
-  if (!deleted) {
-    res.status(404).json({ error: "Appointment not found" });
-    return;
-  }
-  res.json({ ok: true });
-});
-
-router.get("/admin/stats", requireAdmin, async (_req: any, res: any) => {
-  const rows = await db.select().from(appointmentsTable);
-  const now = Date.now();
-  const stats = {
-    total: rows.length,
-    pending: 0,
-    confirmed: 0,
-    completed: 0,
-    cancelled: 0,
-    upcoming: 0,
-  };
-  for (const row of rows) {
-    stats[row.status]++;
-    if (
-      (row.status === "pending" || row.status === "confirmed") &&
-      row.appointmentDate.getTime() >= now
-    ) {
-      stats.upcoming++;
+      res.json(serializeAppointment(updated));
+    } catch (err) {
+      res.status(500).json({ error: "Failed to update appointment" });
     }
   }
-  res.json(stats);
-});
+);
 
-router.get("/admin/patients", requireAdmin, async (_req: any, res: any) => {
-  const rows = await db
-    .select()
-    .from(appointmentsTable)
-    .orderBy(sql`${appointmentsTable.appointmentDate} desc`);
+/**
+ * DELETE APPOINTMENT
+ */
+router.delete(
+  "/admin/appointments/:id",
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const id = String(req.params.id);
 
-  const map = new Map<
-    string,
-    {
-      phoneNumber: string;
-      fullName: string;
-      email: string | null;
-      appointments: ReturnType<typeof serializeAppointment>[];
+      await db.delete(appointmentsTable).where({ id });
+
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to delete appointment" });
     }
-  >();
+  }
+);
 
-  for (const row of rows) {
-    const key = row.phoneNumber;
-    if (!map.has(key)) {
-      map.set(key, {
-        phoneNumber: row.phoneNumber,
-        fullName: row.fullName,
-        email: row.email ?? null,
-        appointments: [],
-      });
+/**
+ * ADMIN STATS
+ */
+router.get(
+  "/admin/stats",
+  requireAdmin,
+  async (_req: Request, res: Response) => {
+    try {
+      const rows = await db.select().from(appointmentsTable);
+
+      const now = Date.now();
+
+      const stats = {
+        total: rows.length,
+        today: rows.filter(
+          (r: any) =>
+            new Date(r.date).toDateString() === new Date(now).toDateString()
+        ).length,
+      };
+
+      res.json(stats);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch stats" });
     }
-    map.get(key)!.appointments.push(serializeAppointment(row));
   }
+);
 
-  const patients = Array.from(map.values()).map((p) => ({
-    phoneNumber: p.phoneNumber,
-    fullName: p.fullName,
-    email: p.email,
-    appointmentCount: p.appointments.length,
-    lastAppointment: p.appointments[0]?.appointmentDate ?? null,
-    appointments: p.appointments,
-  }));
+/**
+ * GET PATIENTS (FROM APPOINTMENTS)
+ */
+router.get(
+  "/admin/patients",
+  requireAdmin,
+  async (_req: Request, res: Response) => {
+    try {
+      const rows = await db.select().from(appointmentsTable);
 
-  res.json(patients);
-});
+      const patients = rows.map((r: any) => r.patient);
 
-router.get("/admin/files", requireAdmin, async (_req: any, res: any) => {
-  const rows = await db
-    .select()
-    .from(uploadsTable)
-    .orderBy(sql`${uploadsTable.uploadedAt} desc`);
-  res.json(
-    rows.map((r) => ({
-      id: r.id,
-      fileName: r.fileName,
-      objectPath: r.objectPath,
-      fileSize: r.fileSize,
-      mimeType: r.mimeType,
-      uploadedAt: r.uploadedAt.toISOString(),
-    })),
-  );
-});
-
-router.post("/admin/files", requireAdmin, async (req: any, res: any) => {
-  const { fileName, objectPath, fileSize, mimeType } = req.body as {
-    fileName: string;
-    objectPath: string;
-    fileSize: number;
-    mimeType: string;
-  };
-  if (!fileName || !objectPath || fileSize == null || !mimeType) {
-    res.status(400).json({ error: "Missing required fields" });
-    return;
+      res.json(patients);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch patients" });
+    }
   }
-  const [row] = await db
-    .insert(uploadsTable)
-    .values({
-      id: randomUUID(),
-      fileName,
-      objectPath,
-      fileSize,
-      mimeType,
-    })
-    .returning();
-  res.status(201).json({
-    id: row.id,
-    fileName: row.fileName,
-    objectPath: row.objectPath,
-    fileSize: row.fileSize,
-    mimeType: row.mimeType,
-    uploadedAt: row.uploadedAt.toISOString(),
-  });
-});
+);
 
-router.delete("/admin/files/:id", requireAdmin, async (req: any, res: any) => {
-  const id = String(req.params.id);
-  const [deleted] = await db
-    .delete(uploadsTable)
-    .where(eq(uploadsTable.id, id))
-    .returning();
-  if (!deleted) {
-    res.status(404).json({ error: "File not found" });
-    return;
+/**
+ * GET FILES
+ */
+router.get(
+  "/admin/files",
+  requireAdmin,
+  async (_req: Request, res: Response) => {
+    try {
+      const rows = await db.select().from(uploadsTable);
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch files" });
+    }
   }
-  res.json({ ok: true });
-});
+);
+
+/**
+ * UPLOAD FILE (placeholder)
+ */
+router.post(
+  "/admin/files",
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const [file] = await db
+        .insert(uploadsTable)
+        .values(req.body)
+        .returning();
+
+      res.json(file);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  }
+);
+
+/**
+ * DELETE FILE
+ */
+router.delete(
+  "/admin/files/:id",
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const id = String(req.params.id);
+
+      await db.delete(uploadsTable).where({ id });
+
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to delete file" });
+    }
+  }
+);
 
 export default router;
